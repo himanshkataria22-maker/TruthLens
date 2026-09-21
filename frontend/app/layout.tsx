@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Shield, Sparkles } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "TruthLens - Multi-Agent Fact Verification",
-  description: "AI-powered multi-agent fact-checking and truth verification system",
+  title: "TruthLens - Verify Before You Share",
+  description: "AI-powered multi-agent fact verification for WhatsApp forwards, news, and claims in Indian languages & English.",
 };
 
 export default function RootLayout({
@@ -12,34 +13,57 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="antialiased min-h-screen flex flex-col justify-between">
-        <header className="border-b border-indigo-900/30 bg-slate-950/60 backdrop-blur-md sticky top-0 z-50">
-          <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-            <a href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center font-black text-white text-lg shadow-lg shadow-indigo-500/30">
-                TL
+    <html lang="en" className="dark">
+      <body className="antialiased min-h-screen flex flex-col justify-between selection:bg-cyan-400 selection:text-navy-900 bg-nodes">
+        {/* Background ambient glow circles */}
+        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+          <div className="absolute top-[-150px] left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-cyan-500/10 rounded-full blur-[140px]" />
+          <div className="absolute top-[30%] right-[-100px] w-[400px] h-[400px] bg-blue-600/10 rounded-full blur-[120px]" />
+          <div className="absolute bottom-[10%] left-[-100px] w-[400px] h-[400px] bg-amber-500/5 rounded-full blur-[130px]" />
+        </div>
+
+        {/* Header */}
+        <header className="sticky top-0 z-50 border-b border-white/10 bg-navy-900/80 backdrop-blur-xl">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+            <a href="/" className="flex items-center gap-3 group">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 p-[1px] shadow-cyan-glow group-hover:scale-105 transition-transform duration-300">
+                <div className="w-full h-full bg-navy-900 rounded-[11px] flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-cyan-400" />
+                </div>
               </div>
-              <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">
-                TruthLens
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-heading text-2xl font-bold tracking-tight text-white">
+                  Truth<span className="text-cyan-400">Lens</span>
+                </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse mt-2" />
+              </div>
             </a>
-            <div className="flex items-center gap-4 text-sm text-slate-400">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                5-Agent Pipeline Active
-              </span>
+
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-navy-800/90 border border-cyan-400/20 text-xs font-medium text-cyan-400 shadow-sm">
+                <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+                <span>5-Agent Verification Engine</span>
+              </div>
             </div>
           </div>
         </header>
 
-        <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-8">
+        {/* Main Body */}
+        <main className="relative z-10 flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8">
           {children}
         </main>
 
-        <footer className="border-t border-slate-900/80 py-6 text-center text-xs text-slate-500">
-          <div className="max-w-6xl mx-auto px-4">
-            TruthLens &copy; {new Date().getFullYear()} &bull; Multi-Agent Evidence & Fact Verification System
+        {/* Footer */}
+        <footer className="relative z-10 border-t border-white/10 bg-navy-900/90 py-6 text-center text-xs text-slate-400">
+          <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-slate-300 font-heading">TruthLens</span>
+              <span>&bull;</span>
+              <span>Verify before you share</span>
+            </div>
+            <div className="px-3 py-1 rounded-full bg-navy-800/80 border border-white/10 text-cyan-400/90 font-mono text-[11px]">
+              Team Winss | Horizon Hackathon
+            </div>
           </div>
         </footer>
       </body>
