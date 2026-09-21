@@ -36,43 +36,41 @@ export default function HomePage() {
   };
 
   return (
-    <div className="space-y-10 py-4">
-      {/* State 1: Input Form */}
+    <div className="space-y-8 py-4">
+      {/* 1. Input Form */}
       {!isLoading && !result && (
-        <div className="animate-fadeIn">
-          <ClaimInput
-            onStartVerification={handleStartVerification}
-            onVerificationComplete={handleVerificationComplete}
-            onError={handleError}
-            isLoading={isLoading}
-          />
-        </div>
+        <ClaimInput
+          onStartVerification={handleStartVerification}
+          onVerificationComplete={handleVerificationComplete}
+          onError={handleError}
+          isLoading={isLoading}
+        />
       )}
 
-      {/* State 2: Step-by-Step Loading Display */}
+      {/* 2. Animated Loading Progress Display */}
       {isLoading && (
-        <div className="animate-fadeIn py-6">
+        <div className="py-6">
           <LoadingSteps />
         </div>
       )}
 
-      {/* State 3: Error Message Card with Retry */}
+      {/* 3. Error Card with Retry */}
       {error && !isLoading && (
-        <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-rose-500/30 bg-rose-500/10 max-w-2xl mx-auto space-y-4 text-center animate-fadeIn">
-          <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 mx-auto">
+        <div className="theme-card border-l-[8px] border-l-[#DC2626] p-6 sm:p-8 max-w-2xl mx-auto space-y-4 text-center animate-slide-up">
+          <div className="w-12 h-12 rounded-xl bg-rose-100 flex items-center justify-center text-[#DC2626] mx-auto">
             <AlertCircle className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="font-heading text-lg font-bold text-white">
+            <h3 className="font-heading text-lg font-bold text-[#1C2740]">
               Verification Failed
             </h3>
-            <p className="text-sm text-rose-200 mt-1">
+            <p className="text-sm text-slate-600 mt-1">
               {error}
             </p>
           </div>
           <button
             onClick={handleReset}
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-navy-800 hover:bg-navy-700 text-white text-xs sm:text-sm font-semibold border border-white/10 transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#22B8CF] hover:bg-[#1A9DB3] text-white text-sm font-semibold transition-colors"
           >
             <RotateCcw className="w-4 h-4" />
             <span>Try Again</span>
@@ -80,9 +78,9 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* State 4: Verdict & Evidence Trail Result Screen */}
+      {/* 4. Complete Verdict & Evidence Trail Result Screen */}
       {result && !isLoading && (
-        <div className="space-y-8 animate-fadeIn max-w-4xl mx-auto">
+        <div className="space-y-8 max-w-4xl mx-auto animate-slide-up">
           <VerdictCard
             claim={result.claim}
             verdict={result.verdict}

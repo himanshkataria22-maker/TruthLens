@@ -9,40 +9,54 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Inter", "Noto Sans Devanagari", "-apple-system", "sans-serif"],
+        sans: ["Inter", "Noto Sans Devanagari", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
         heading: ["Space Grotesk", "Poppins", "sans-serif"],
       },
       colors: {
-        cyan: {
-          400: "#00D9FF",
-          500: "#00B8D9",
-          600: "#0095B0",
+        theme: {
+          bgStart: "#5B6F9E",
+          bgEnd: "#3F5079",
+          card: "#F7F9FC",
+          cardBorder: "#E2E8F0",
+          textPrimary: "#1C2740",
+          textSecondary: "#475569",
+          textMuted: "#64748B",
         },
-        amber: {
-          400: "#FFB800",
-          500: "#F59E0B",
-        },
-        navy: {
-          900: "#0A1128",
-          800: "#101D3F",
-          700: "#1B2845",
-          600: "#273B63",
+        primary: {
+          DEFAULT: "#22B8CF",
+          hover: "#1A9DB3",
+          light: "#E3FAFC",
+          dark: "#158091",
         },
         verdict: {
-          supported: "#10B981",
-          false: "#EF4444",
-          misleading: "#FFB800",
-          unverifiable: "#9CA3AF",
+          supported: "#16A34A",
+          false: "#DC2626",
+          misleading: "#F59E0B",
+          unverifiable: "#64748B",
         }
       },
       boxShadow: {
-        'cyan-glow': '0 0 25px -5px rgba(0, 217, 255, 0.4)',
-        'cyan-glow-lg': '0 0 35px 0px rgba(0, 217, 255, 0.6)',
-        'card-glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+        'card-clean': '0 10px 25px -5px rgba(28, 39, 64, 0.15), 0 8px 10px -6px rgba(28, 39, 64, 0.1)',
+        'card-hover': '0 20px 35px -10px rgba(28, 39, 64, 0.22), 0 10px 15px -5px rgba(28, 39, 64, 0.12)',
+        'btn-glow': '0 4px 14px 0 rgba(34, 184, 207, 0.38)',
+        'btn-glow-hover': '0 6px 20px 0 rgba(34, 184, 207, 0.55)',
+      },
+      borderRadius: {
+        'card': '16px',
+      },
+      keyframes: {
+        slideUpFade: {
+          '0%': { opacity: '0', transform: 'translateY(12px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        pulseSlow: {
+          '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+          '50%': { opacity: '0.6', transform: 'scale(1.15)' },
+        }
       },
       animation: {
-        'pulse-subtle': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'spin-slow': 'spin 8s linear infinite',
+        'slide-up': 'slideUpFade 0.3s ease-out forwards',
+        'pulse-dot': 'pulseSlow 1.8s ease-in-out infinite',
       }
     },
   },

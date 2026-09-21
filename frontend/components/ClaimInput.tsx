@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Sparkles, ArrowRight, AlertCircle, RefreshCw, Layers } from 'lucide-react';
+import { ArrowRight, RefreshCw, Sparkles } from 'lucide-react';
 
 interface EvidenceItem {
   title: string;
@@ -36,7 +36,7 @@ interface ClaimInputProps {
 
 const SAMPLE_CHIPS = [
   {
-    tag: "🇮🇳 Hindi Viral",
+    tag: "🇮🇳 Hindi Forward",
     text: "सावधान! 500 रुपये के नए नोट में अगर हरी पट्टी गांधी जी के पास नहीं है तो वह नोट नकली है।"
   },
   {
@@ -71,7 +71,7 @@ export default function ClaimInput({
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 35000); // 35s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 35000);
 
       const res = await fetch(`${apiUrl}/verify`, {
         method: "POST",
@@ -102,88 +102,85 @@ export default function ClaimInput({
   const charCount = text.length;
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-5">
       {/* Hero Section */}
-      <div className="text-center space-y-3 max-w-2xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 shadow-sm">
-          <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-          <span>Real-time Multi-Agent Truth Verification</span>
+      <div className="text-center space-y-2.5 max-w-2xl mx-auto">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/20 border border-white/30 text-white shadow-xs backdrop-blur-xs">
+          <Sparkles className="w-3.5 h-3.5 text-[#22B8CF]" />
+          <span>Real-time Multi-Agent Fact Verification</span>
         </div>
-        
-        <h1 className="font-heading text-4xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
-          Verify before you <span className="text-cyan-400 underline decoration-cyan-500/40 underline-offset-8">share</span>
+
+        <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white leading-tight">
+          Verify before you <span className="text-[#22B8CF] underline decoration-[#22B8CF]/50 underline-offset-8">share</span>
         </h1>
-        
-        <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-          AI-powered truth verification for WhatsApp forwards, news, and viral claims across Indian languages & English.
+
+        <p className="text-[#EAF0FA] text-xs sm:text-sm md:text-base leading-relaxed font-normal max-w-xl mx-auto">
+          AI-powered truth verification for WhatsApp forwards, news, and viral claims in Indian languages & English.
         </p>
       </div>
 
-      {/* Input Form Card */}
-      <form onSubmit={handleSubmit} className="glass-panel rounded-3xl p-6 sm:p-8 shadow-card-glass border border-white/10">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <label htmlFor="claim-input" className="text-xs font-mono font-semibold uppercase tracking-wider text-slate-300">
-              Input Statement / Forward
-            </label>
-            <span className={`text-xs font-mono ${charCount > 1000 ? 'text-amber-400' : 'text-slate-400'}`}>
-              {charCount} characters
-            </span>
-          </div>
+      {/* Input Card */}
+      <form onSubmit={handleSubmit} className="theme-card p-4 sm:p-7 space-y-4">
+        <div className="flex items-center justify-between">
+          <label htmlFor="claim-textarea" className="text-xs font-mono font-bold uppercase tracking-wider text-[#1C2740]">
+            Paste WhatsApp Forward or Claim
+          </label>
+          <span className={`text-[11px] sm:text-xs font-mono font-semibold ${charCount > 1000 ? 'text-amber-600' : 'text-slate-500'}`}>
+            {charCount} characters
+          </span>
+        </div>
 
-          <textarea
-            id="claim-input"
-            rows={5}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            disabled={isLoading}
-            placeholder="Paste a WhatsApp forward or any claim (Hindi, English, or any Indian language)..."
-            className="w-full glass-input rounded-2xl p-4 sm:p-5 text-slate-100 placeholder-slate-500 text-sm sm:text-base focus:outline-none transition-all duration-200 resize-y leading-relaxed font-sans"
-          />
+        <textarea
+          id="claim-textarea"
+          rows={4}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          disabled={isLoading}
+          placeholder="Paste a WhatsApp forward or any claim (Hindi, English, or any Indian language)..."
+          className="w-full bg-white border border-slate-300 rounded-xl p-3.5 sm:p-4 text-[#1C2740] placeholder-slate-400 text-sm sm:text-base focus:outline-none focus:border-[#22B8CF] focus:ring-2 focus:ring-[#22B8CF]/25 transition-all duration-200 resize-y leading-relaxed font-sans"
+        />
 
-          {/* Quick Example Chips */}
-          <div className="space-y-2 pt-1">
-            <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider block">
-              Click to try pre-verified examples:
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {SAMPLE_CHIPS.map((chip, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => handleChipClick(chip.text)}
-                  disabled={isLoading}
-                  className="px-3 py-1.5 rounded-xl bg-navy-800/80 hover:bg-navy-700/90 border border-white/10 hover:border-cyan-400/40 text-xs text-slate-300 hover:text-white transition-all duration-200 text-left flex items-center gap-1.5"
-                >
-                  <span className="font-semibold text-cyan-400 text-[11px]">{chip.tag}:</span>
-                  <span className="truncate max-w-[200px] sm:max-w-[280px]">{chip.text}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <div className="pt-4 flex items-center justify-end">
-            <button
-              type="submit"
-              disabled={!text.trim() || isLoading}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-navy-900 font-heading font-bold text-base shadow-cyan-glow hover:shadow-cyan-glow-lg disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none transition-all duration-200"
-            >
-              {isLoading ? (
-                <>
-                  <RefreshCw className="w-5 h-5 animate-spin" />
-                  <span>Verifying Multi-Agent Pipeline...</span>
-                </>
-              ) : (
-                <>
-                  <span>Verify Claim</span>
-                  <ArrowRight className="w-5 h-5" />
-                </>
-              )}
-            </button>
-          </div>
+        <div className="flex items-center justify-end pt-1">
+          <button
+            type="submit"
+            disabled={!text.trim() || isLoading}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3 rounded-xl bg-[#22B8CF] hover:bg-[#1A9DB3] text-white font-heading font-bold text-sm sm:text-base shadow-btn-glow hover:shadow-btn-glow-hover disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
+          >
+            {isLoading ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                <span>Verifying Pipeline...</span>
+              </>
+            ) : (
+              <>
+                <span>Verify Claim</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
         </div>
       </form>
+
+      {/* Example Chips */}
+      <div className="space-y-2 max-w-3xl mx-auto">
+        <span className="text-[11px] sm:text-xs font-mono font-bold text-white uppercase tracking-wider block text-center sm:text-left">
+          Click to try pre-verified examples:
+        </span>
+        <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
+          {SAMPLE_CHIPS.map((chip, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => handleChipClick(chip.text)}
+              disabled={isLoading}
+              className="px-3 py-2 rounded-xl bg-[#324367]/90 hover:bg-[#283756] border border-white/25 text-xs text-white transition-all duration-200 text-left flex items-center gap-1.5 shadow-xs hover:-translate-y-0.5 cursor-pointer max-w-full"
+            >
+              <span className="font-bold text-[#22B8CF] shrink-0 text-[11px]">{chip.tag}:</span>
+              <span className="truncate max-w-[170px] sm:max-w-[240px] text-white/95 text-[11px] sm:text-xs">{chip.text}</span>
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

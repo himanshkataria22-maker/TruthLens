@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Shield, Sparkles } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "TruthLens - Verify Before You Share",
@@ -13,57 +13,48 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className="antialiased min-h-screen flex flex-col justify-between selection:bg-cyan-400 selection:text-navy-900 bg-nodes">
-        {/* Background ambient glow circles */}
-        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-          <div className="absolute top-[-150px] left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-cyan-500/10 rounded-full blur-[140px]" />
-          <div className="absolute top-[30%] right-[-100px] w-[400px] h-[400px] bg-blue-600/10 rounded-full blur-[120px]" />
-          <div className="absolute bottom-[10%] left-[-100px] w-[400px] h-[400px] bg-amber-500/5 rounded-full blur-[130px]" />
-        </div>
-
+    <html lang="en">
+      <body className="antialiased min-h-screen flex flex-col justify-between bg-network-pattern">
         {/* Header */}
-        <header className="sticky top-0 z-50 border-b border-white/10 bg-navy-900/80 backdrop-blur-xl">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-            <a href="/" className="flex items-center gap-3 group">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 p-[1px] shadow-cyan-glow group-hover:scale-105 transition-transform duration-300">
-                <div className="w-full h-full bg-navy-900 rounded-[11px] flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-cyan-400" />
-                </div>
+        <header className="sticky top-0 z-50 bg-[#3F5079]/85 backdrop-blur-md border-b border-white/15">
+          <div className="max-w-4xl mx-auto px-3 sm:px-6 py-3.5 flex items-center justify-between">
+            <a href="/" className="flex items-center gap-2 group">
+              <div className="w-8 h-8 rounded-lg bg-[#22B8CF] flex items-center justify-center text-white shadow-xs group-hover:bg-[#1A9DB3] transition-colors">
+                <ShieldCheck className="w-5 h-5 text-white" />
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-heading text-2xl font-bold tracking-tight text-white">
-                  Truth<span className="text-cyan-400">Lens</span>
-                </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse mt-2" />
-              </div>
+              <span className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-white">
+                Truth<span className="text-[#22B8CF]">Lens</span>
+              </span>
             </a>
 
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-navy-800/90 border border-cyan-400/20 text-xs font-medium text-cyan-400 shadow-sm">
-                <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-                <span>5-Agent Verification Engine</span>
-              </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold bg-white/15 text-white border border-white/20">
+                <span className="w-2 h-2 rounded-full bg-[#22B8CF] animate-pulse" />
+                <span>Multi-Agent</span>
+              </span>
             </div>
           </div>
         </header>
 
-        {/* Main Body */}
-        <main className="relative z-10 flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8">
+        {/* Main Content */}
+        <main className="flex-1 max-w-4xl w-full mx-auto px-3 sm:px-6 py-6 sm:py-8">
           {children}
         </main>
 
         {/* Footer */}
-        <footer className="relative z-10 border-t border-white/10 bg-navy-900/90 py-6 text-center text-xs text-slate-400">
-          <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-slate-300 font-heading">TruthLens</span>
-              <span>&bull;</span>
-              <span>Verify before you share</span>
+        <footer className="border-t border-white/15 bg-[#344468]/90 py-5 text-center text-xs text-slate-200">
+          <div className="max-w-4xl mx-auto px-3 sm:px-6 space-y-2">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+              <div className="font-heading font-semibold text-white tracking-wide text-xs sm:text-sm">
+                TruthLens &bull; Verify Before You Share
+              </div>
+              <div className="font-mono text-[11px] text-[#22B8CF] font-medium bg-white/10 px-3 py-1 rounded-full border border-white/10">
+                Team Winss | Horizon Hackathon
+              </div>
             </div>
-            <div className="px-3 py-1 rounded-full bg-navy-800/80 border border-white/10 text-cyan-400/90 font-mono text-[11px]">
-              Team Winss | Horizon Hackathon
-            </div>
+            <p className="text-[11px] text-slate-300">
+              AI-assisted verification. Always check the sources.
+            </p>
           </div>
         </footer>
       </body>

@@ -6,7 +6,7 @@ import VerdictCard from '@/components/VerdictCard';
 import EvidenceTrail from '@/components/EvidenceTrail';
 import LoadingSteps from '@/components/LoadingSteps';
 import { VerificationResult } from '@/components/ClaimInput';
-import { ArrowLeft, AlertCircle } from 'lucide-react';
+import { ArrowLeft, AlertCircle, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
 
 function ResultContent() {
@@ -72,18 +72,18 @@ function ResultContent() {
 
   if (error) {
     return (
-      <div className="glass-panel rounded-3xl p-8 border border-rose-500/30 bg-rose-500/10 max-w-2xl mx-auto space-y-4 text-center my-8">
-        <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 mx-auto">
+      <div className="theme-card border-l-[8px] border-l-[#DC2626] p-6 sm:p-8 max-w-2xl mx-auto space-y-4 text-center my-8">
+        <div className="w-12 h-12 rounded-xl bg-rose-100 flex items-center justify-center text-[#DC2626] mx-auto">
           <AlertCircle className="w-6 h-6" />
         </div>
-        <h3 className="font-heading text-lg font-bold text-white">Verification Failed</h3>
-        <p className="text-sm text-rose-200">{error}</p>
+        <h3 className="font-heading text-lg font-bold text-[#1C2740]">Verification Failed</h3>
+        <p className="text-sm text-slate-600">{error}</p>
         <Link
           href="/"
-          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-navy-800 hover:bg-navy-700 text-white text-sm font-semibold border border-white/10"
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#22B8CF] hover:bg-[#1A9DB3] text-white text-sm font-semibold transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to Home</span>
+          <span>Back to Input</span>
         </Link>
       </div>
     );
@@ -92,17 +92,7 @@ function ResultContent() {
   if (!result) return null;
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto py-4 animate-fadeIn">
-      <div className="flex items-center justify-between">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-xs font-medium text-slate-300 hover:text-white bg-navy-800/80 px-4 py-2 rounded-xl border border-white/10 hover:border-cyan-400/30 transition-all"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Verify Another Claim</span>
-        </Link>
-      </div>
-
+    <div className="space-y-8 max-w-4xl mx-auto py-4 animate-slide-up">
       <VerdictCard
         claim={result.claim}
         verdict={result.verdict}
