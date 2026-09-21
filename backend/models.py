@@ -54,6 +54,21 @@ class StepLog(BaseModel):
 
 class VerifyRequest(BaseModel):
     text: str
+    target_language: Optional[str] = None
+
+class ImageVerifyRequest(BaseModel):
+    image_data: str = Field(description="Base64 encoded image data")
+    
+class ImageExtractResponse(BaseModel):
+    extracted_text: str
+    language: str
+
+class ExplainRequest(BaseModel):
+    claim: str
+    verdict: str
+    confidence: int
+    evidence: List[EvidenceItem]
+    target_language: str = "en"
 
 class VerifyResponse(BaseModel):
     claim: str

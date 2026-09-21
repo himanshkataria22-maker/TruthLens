@@ -182,3 +182,107 @@ def _generate_heuristic_fallback(prompt: str, response_model: Type[T]) -> T:
         return response_model(explanation=exp, language=lang)
 
     raise ValueError(f"Unknown fallback model: {name}")
+
+
+async def extract_text_from_image(image_base64: str) -> dict:
+    """
+    Extract text from an image using LLM vision capabilities.
+    Returns dict with 'extracted_text' and 'language'.
+    """
+    api_key = os.getenv("LLM_API_KEY", "").strip()
+    model = os.getenv("LLM_MODEL", "").strip()
+    base_url = os.getenv("LLM_BASE_URL", "").strip()
+
+    if not api_key:
+        api_key = os.getenv("OPENAI_API_KEY", "").strip() or os.getenv("GROQ_API_KEY", "").strip()
+
+    # Check if image_base64 has data URI prefix
+    if image_base64.startswith("data:"):
+        # Already has prefix
+        image_url = image_base64
+    else:
+        # Add prefix
+        image_url = f"data:image/jpeg;base64,{image_base64}"
+
+    # For vision, we need a vision-capable model
+    vision_model = model
+    if not vision_model or vision_model in ["llama-3.3-70b-versatile"]:
+        # Default to GPT-4o-mini for vision if not specified
+        if api_key.startswith("gsk_"):
+            vision_model = "llama-3.2-90b-vision-preview"
+        elif api_key.startswith("AIza"):
+            vision_model = "gemini-1.5-flash"
+        else:
+            vision_model = "gpt-4o-mini"
+
+    if not base_url:
+        if api_key.startswith("gsk_"):
+            base_url = "https://api.groq.com/openai/v1/chat/completions"
+        elif api_key.startswith("AIza"):
+            base_url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+        else:
+            base_url = "https://api.openai.com/v1/chat/completions"
+    elif not base_url.endswith("/chat/completions"):
+        base_url = f"{base_url.rstrip('/')}/chat/completions"
+
+    system_prompt = """You are an expert OCR system for Indian language text extraction.
+Extract ALL text visible in the image, preserving the exact wording and language.
+Detect the primary language (hi, en, mr, ta, te, bn, etc.).
+If the image is unreadable or contains no text, return empty string for extracted_text.
+
+Respond with JSON:
+{
+  "extracted_text": "full text from image",
+  "language": "iso_code"
+}"""
+
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Extract all text from this image and identify its language. Return only valid JSON."},
+                {"type": "image_url", "image_url": {"url": image_url}}
+            ]
+        }
+    ]
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}"
+    }
+
+    if not api_key or api_key.startswith("your_"):
+        return {
+            "extracted_text": "",
+            "language": "en",
+            "error": "No valid API key configured for image extraction"
+        }
+
+    try:
+        payload = {
+            "model": vision_model,
+            "messages": messages,
+            "temperature": 0.1,
+            "max_tokens": 1000
+        }
+        
+        async with httpx.AsyncClient(timeout=45.0) as client:
+            res = await client.post(base_url, headers=headers, json=payload)
+            res.raise_for_status()
+            data = res.json()
+            content = data["choices"][0]["message"]["content"]
+            
+            # Try to parse as JSON
+            clean_json = _clean_json_str(content)
+            result = json.loads(clean_json)
+            
+            return {
+                "extracted_text": result.get("extracted_text", ""),
+                "language": result.get("language", "en")
+            }
+    except Exception as e:
+        return {
+            "extracted_text": "",
+            "language": "en",
+            "error": f"Image extraction failed: {str(e)}"
+        }

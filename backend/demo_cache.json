@@ -1,0 +1,133 @@
+{
+  "claims": [
+    {
+      "normalized_text": "सावधान 500 रुपये के नोट पर हरी पट्टी अगर गांधी जी की तस्वीर के पास नहीं है बल्कि गवर्नर के हस्ताक्षर के पास है तो वह नोट पूरी तरह से नकली है तुरंत सभी को फॉरवर्ड करें",
+      "result": {
+        "claim": "500 रुपये के नोट पर हरी पट्टी अगर गांधी जी की तस्वीर के पास नहीं है बल्कि गवर्नर के हस्ताक्षर के पास है तो वह नोट पूरी तरह से नकली है।",
+        "language": "hi",
+        "verdict": "FALSE",
+        "confidence": 96,
+        "explanation": "यह दावा पूरी तरह से गलत (FALSE) है। भारतीय रिज़र्व बैंक (RBI) और PIB फैक्ट चेक के अनुसार 500 रुपये के नोट पर हरी सुरक्षा पट्टी चाहे महात्मा गांधी की तस्वीर के पास हो या गवर्नर के हस्ताक्षर के पास, दोनों प्रकार के नोट पूरी तरह असली और वैध हैं। सुरक्षा धागे की छपाई प्रक्रिया के कारण यह मामूली अंतर होता है और नोट नकली नहीं होता।",
+        "evidence": [
+          {
+            "title": "PIB Fact Check: Fact check on viral message regarding ₹500 currency note with green strip",
+            "url": "https://pib.gov.in/FactCheck/500Note",
+            "domain": "pib.gov.in",
+            "tier": 1,
+            "stance": "contradicts",
+            "reason": "PIB Fact Check and RBI clarify that both variants of ₹500 notes are completely legal tender."
+          },
+          {
+            "title": "Reserve Bank of India - Frequently Asked Questions on Indian Banknotes",
+            "url": "https://rbi.org.in/Scripts/FAQView.aspx?Id=136",
+            "domain": "rbi.org.in",
+            "tier": 1,
+            "stance": "contradicts",
+            "reason": "RBI confirms position of green security thread does not make genuine currency counterfeit."
+          },
+          {
+            "title": "BOOM FactCheck: No, ₹500 notes with green strip near governor signature are not fake",
+            "url": "https://www.boomlive.in/fact-check/rbi-500-rupee-note-fake-green-strip-viral-claim-debunked",
+            "domain": "boomlive.in",
+            "tier": 2,
+            "stance": "contradicts",
+            "reason": "BoomLive fact-check debunks the recurring fake message regarding ₹500 currency."
+          }
+        ],
+        "steps": [
+          {"name": "claim_extraction", "duration_ms": 850},
+          {"name": "web_research", "duration_ms": 1200},
+          {"name": "credibility_filtering", "duration_ms": 320},
+          {"name": "claim_verification", "duration_ms": 980},
+          {"name": "explanation_generation", "duration_ms": 750}
+        ]
+      }
+    },
+    {
+      "normalized_text": "unesco has officially declared the indian national anthem jana gana mana as the best national anthem in the world",
+      "result": {
+        "claim": "UNESCO has officially declared the Indian National Anthem Jana Gana Mana as the best national anthem in the world.",
+        "language": "en",
+        "verdict": "FALSE",
+        "confidence": 98,
+        "explanation": "This claim is completely FALSE. UNESCO has never conducted any competition or issued any announcement declaring the Indian National Anthem 'Jana Gana Mana' as the best national anthem in the world. Official fact-checking organizations and UNESCO representatives have repeatedly debunked this recurring internet hoax.",
+        "evidence": [
+          {
+            "title": "Alt News: UNESCO did not declare Jana Gana Mana as best national anthem",
+            "url": "https://www.altnews.in/unesco-declares-jana-gana-mana-best-national-anthem-fake/",
+            "domain": "altnews.in",
+            "tier": 2,
+            "stance": "contradicts",
+            "reason": "AltNews confirms UNESCO never gave any such declaration."
+          },
+          {
+            "title": "The Hindu: Viral UNESCO national anthem claim is baseless hoax",
+            "url": "https://www.thehindu.com/news/national/unesco-best-anthem-hoax-factcheck/article.ece",
+            "domain": "thehindu.com",
+            "tier": 2,
+            "stance": "contradicts",
+            "reason": "The Hindu reported UNESCO denial of any such competition or award."
+          },
+          {
+            "title": "BoomLive: Fact Check - Did UNESCO announce world best anthem?",
+            "url": "https://www.boomlive.in/fake-news/unesco-declares-jana-gana-mana-best-anthem-hoax/",
+            "domain": "boomlive.in",
+            "tier": 2,
+            "stance": "contradicts",
+            "reason": "BoomLive debunked this viral social media hoax as completely fabricated."
+          }
+        ],
+        "steps": [
+          {"name": "claim_extraction", "duration_ms": 720},
+          {"name": "web_research", "duration_ms": 1450},
+          {"name": "credibility_filtering", "duration_ms": 280},
+          {"name": "claim_verification", "duration_ms": 1120},
+          {"name": "explanation_generation", "duration_ms": 890}
+        ]
+      }
+    },
+    {
+      "normalized_text": "india won the icc men s t20 world cup in june 2024 by defeating south africa in barbados",
+      "result": {
+        "claim": "India won the ICC Men's T20 World Cup in June 2024 by defeating South Africa in Barbados.",
+        "language": "en",
+        "verdict": "SUPPORTED",
+        "confidence": 99,
+        "explanation": "This claim is fully SUPPORTED. On June 29, 2024, the Indian cricket team led by Rohit Sharma won the ICC Men's T20 World Cup 2024 by defeating South Africa by 7 runs in the final held at Kensington Oval in Barbados, as confirmed by official ICC records and international news media.",
+        "evidence": [
+          {
+            "title": "The Hindu: India crowned ICC Men's T20 World Cup 2024 champions",
+            "url": "https://www.thehindu.com/sport/cricket/india-win-t20-world-cup-2024/article.ece",
+            "domain": "thehindu.com",
+            "tier": 2,
+            "stance": "supports",
+            "reason": "The Hindu reporting confirms India defeated South Africa by 7 runs in Barbados."
+          },
+          {
+            "title": "The Indian Express: T20 World Cup 2024 Final Highlights - India defeat South Africa",
+            "url": "https://indianexpress.com/article/sports/cricket/india-vs-south-africa-t20-world-cup-2024-final/",
+            "domain": "indianexpress.com",
+            "tier": 2,
+            "stance": "supports",
+            "reason": "Indian Express match report verifies India lifting the 2024 ICC T20 trophy."
+          },
+          {
+            "title": "BBC Sport: India beat South Africa to win thrilling T20 World Cup final",
+            "url": "https://www.bbc.com/sport/cricket/articles/c044q730r0qo",
+            "domain": "bbc.com",
+            "tier": 2,
+            "stance": "supports",
+            "reason": "BBC Sport coverage confirms India's T20 World Cup championship victory."
+          }
+        ],
+        "steps": [
+          {"name": "claim_extraction", "duration_ms": 680},
+          {"name": "web_research", "duration_ms": 1350},
+          {"name": "credibility_filtering", "duration_ms": 310},
+          {"name": "claim_verification", "duration_ms": 1050},
+          {"name": "explanation_generation", "duration_ms": 820}
+        ]
+      }
+    }
+  ]
+}

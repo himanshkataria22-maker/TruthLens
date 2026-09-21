@@ -37,3 +37,40 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+
+async def test_streaming():
+    """Test the streaming pipeline endpoint."""
+    from pipeline import run_pipeline_streaming
+    
+    print("\n" + "=" * 70)
+    print("Testing Streaming Pipeline")
+    print("=" * 70)
+    
+    test_text = "India won the ICC Men's T20 World Cup in June 2024."
+    print(f"Input: {test_text}\n")
+    
+    steps_received = []
+    result_data = None
+    
+    async for event in run_pipeline_streaming(test_text):
+        if event.get("step") == "result":
+            result_data = event.get("data")
+            print(f"✓ Final result received")
+        else:
+            step_name = event.get("step")
+            duration = event.get("duration_ms")
+            steps_received.append(step_name)
+            print(f"✓ Step completed: {step_name} ({duration}ms)")
+    
+    print(f"\nTotal steps received: {len(steps_received)}")
+    print(f"Steps: {steps_received}")
+    print(f"Result verdict: {result_data.get('verdict') if result_data else 'None'}")
+    print("=" * 70)
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == "--stream":
+        asyncio.run(test_streaming())
+    else:
+        asyncio.run(main())

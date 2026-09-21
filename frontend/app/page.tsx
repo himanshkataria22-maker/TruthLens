@@ -11,11 +11,17 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<VerificationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [completedSteps, setCompletedSteps] = useState<string[]>([]);
 
   const handleStartVerification = () => {
     setIsLoading(true);
     setError(null);
     setResult(null);
+    setCompletedSteps([]);
+  };
+
+  const handleStepComplete = (step: string, duration: number) => {
+    setCompletedSteps(prev => [...prev, step]);
   };
 
   const handleVerificationComplete = (data: VerificationResult) => {
@@ -33,6 +39,7 @@ export default function HomePage() {
     setResult(null);
     setError(null);
     setIsLoading(false);
+    setCompletedSteps([]);
   };
 
   return (
@@ -42,6 +49,7 @@ export default function HomePage() {
         <ClaimInput
           onStartVerification={handleStartVerification}
           onVerificationComplete={handleVerificationComplete}
+          onStepComplete={handleStepComplete}
           onError={handleError}
           isLoading={isLoading}
         />
@@ -50,7 +58,7 @@ export default function HomePage() {
       {/* 2. Animated Loading Progress Display */}
       {isLoading && (
         <div className="py-6">
-          <LoadingSteps />
+          <LoadingSteps completedSteps={completedSteps} />
         </div>
       )}
 

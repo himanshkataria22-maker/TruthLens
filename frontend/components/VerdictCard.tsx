@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { CheckCircle2, XCircle, AlertTriangle, HelpCircle, Copy, Check, Quote, Globe, ArrowLeft } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertTriangle, HelpCircle, Copy, Check, Quote, Globe, ArrowLeft, Languages, Share2 } from 'lucide-react';
 
 interface EvidenceItem {
   title: string;
@@ -20,6 +20,7 @@ interface VerdictCardProps {
   evidence?: EvidenceItem[];
   language?: string;
   onReset?: () => void;
+  onLanguageChange?: (newExplanation: string, newLang: string) => void;
 }
 
 export default function VerdictCard({
@@ -29,9 +30,58 @@ export default function VerdictCard({
   explanation,
   evidence = [],
   language = "en",
-  onReset
+  onReset,
+  onLanguageChange
 }: VerdictCardProps) {
   const [copied, setCopied] = useState(false);
+  const [isChangingLanguage, setIsChangingLanguage] = useState(false);
+  const [currentLanguage, setCurrentLanguage] = useState(language);
+  const [currentExplanation, setCurrentExplanation] = useState(explanation);
+
+  const availableLanguages = [
+    { code: "en", label: "English" },
+    { code: "hi", label: "हिन्दी" },
+    { code: "mr", label: "मराठी" },
+    { code: "ta", label: "தமிழ்" },
+    { code: "bn", label: "বাংলা" },
+  ];
+
+  const handleLanguageChange = async (newLang: string) => {
+    if (newLang === currentLanguage || isChangingLanguage) return;
+
+    setIsChangingLanguage(true);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+    try {
+      const res = await fetch(`${apiUrl}/explain`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          claim,
+          verdict,
+          confidence,
+          evidence,
+          target_language: newLang
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to regenerate explanation");
+      }
+
+      const data = await res.json();
+      setCurrentExplanation(data.explanation);
+      setCurrentLanguage(newLang);
+      
+      if (onLanguageChange) {
+        onLanguageChange(data.explanation, newLang);
+      }
+    } catch (err) {
+      console.error("Language change failed:", err);
+    } finally {
+      setIsChangingLanguage(false);
+    }
+  };
 
   const normalizedVerdict = (verdict || "UNVERIFIABLE").toUpperCase();
 
@@ -78,12 +128,42 @@ export default function VerdictCard({
 
   const vInfo = getVerdictDetails();
 
+  const getVerdictEmoji = () => {
+    switch (normalizedVerdict) {
+      case "SUPPORTED":
+        return "✅";
+      case "FALSE":
+        return "❌";
+      case "MISLEADING":
+        return "⚠️";
+      default:
+        return "❓";
+    }
+  };
+
   const handleCopy = () => {
-    const topSource = evidence?.[0]?.url ? `\\nTop Source: ${evidence[0].url}` : '';
-    const textToCopy = `🔍 TruthLens Fact-Check\\nVerdict: ${normalizedVerdict} (${confidence}% confidence)\\n\\nClaim: "${claim}"\\n\\nExplanation: ${explanation}${topSource}\\n\\nVerified with TruthLens`;
+    const emoji = getVerdictEmoji();
+    const topSource = evidence?.[0]?.url ? `\nTop Source: ${evidence[0].url}` : '';
+    const shortClaim = claim.length > 100 ? claim.substring(0, 100) + "..." : claim;
+    const reason = currentExplanation.length > 150 ? currentExplanation.substring(0, 150) + "..." : currentExplanation;
+    
+    const textToCopy = `${emoji} TruthLens Fact-Check\nVerdict: ${normalizedVerdict}\n\nClaim: "${shortClaim}"\n\nReason: ${reason}${topSource}\n\nVerified with TruthLens`;
     navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
+  };
+
+  const handleWhatsAppShare = () => {
+    const emoji = getVerdictEmoji();
+    const topSource = evidence?.[0]?.url ? `\n${evidence[0].url}` : '';
+    const shortClaim = claim.length > 80 ? claim.substring(0, 80) + "..." : claim;
+    const reason = currentExplanation.split('.')[0] + '.'; // First sentence
+    
+    const summary = `${emoji} ${normalizedVerdict}\n\n"${shortClaim}"\n\n${reason}${topSource}\n\n✓ Verified with TruthLens`;
+    const encoded = encodeURIComponent(summary);
+    const whatsappUrl = `https://wa.me/?text=${encoded}`;
+    
+    window.open(whatsappUrl, '_blank');
   };
 
   const getLanguageLabel = (code: string) => {
@@ -154,11 +234,36 @@ export default function VerdictCard({
 
       {/* 3. Explanation in User's Language */}
       <div className="p-4 sm:p-5 rounded-xl bg-white border border-slate-200 shadow-xs">
-        <h3 className="font-heading text-xs sm:text-sm font-bold uppercase tracking-wider text-[#1C2740] mb-1.5">
-          Explanation ({getLanguageLabel(language)})
-        </h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-heading text-xs sm:text-sm font-bold uppercase tracking-wider text-[#1C2740]">
+            Explanation ({getLanguageLabel(currentLanguage)})
+          </h3>
+          <div className="flex items-center gap-1.5">
+            <Languages className="w-4 h-4 text-slate-400" />
+            <span className="text-[10px] text-slate-500 font-semibold uppercase">Language:</span>
+          </div>
+        </div>
+        
+        {/* Language Selector Chips */}
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {availableLanguages.map((lang) => (
+            <button
+              key={lang.code}
+              onClick={() => handleLanguageChange(lang.code)}
+              disabled={isChangingLanguage}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                currentLanguage === lang.code
+                  ? 'bg-[#22B8CF] text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              } ${isChangingLanguage ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+            >
+              {lang.label}
+            </button>
+          ))}
+        </div>
+
         <p className="text-sm sm:text-base text-[#1C2740] leading-relaxed font-normal">
-          {explanation}
+          {isChangingLanguage ? "Translating explanation..." : currentExplanation}
         </p>
       </div>
 
@@ -174,22 +279,32 @@ export default function VerdictCard({
           </button>
         )}
 
-        <button
-          onClick={handleCopy}
-          className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#22B8CF] hover:bg-[#1A9DB3] text-white text-xs sm:text-sm font-bold shadow-btn-glow hover:shadow-btn-glow-hover transition-all duration-200 sm:ml-auto hover:-translate-y-0.5 cursor-pointer"
-        >
-          {copied ? (
-            <>
-              <Check className="w-4 h-4 text-white" />
-              <span>Copied Summary!</span>
-            </>
-          ) : (
-            <>
-              <Copy className="w-4 h-4 text-white" />
-              <span>Copy Result</span>
-            </>
-          )}
-        </button>
+        <div className="flex items-center gap-2 sm:ml-auto">
+          <button
+            onClick={handleWhatsAppShare}
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#1EBE57] text-white text-xs sm:text-sm font-bold shadow-sm transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
+          >
+            <Share2 className="w-4 h-4 text-white" />
+            <span>Share on WhatsApp</span>
+          </button>
+
+          <button
+            onClick={handleCopy}
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#22B8CF] hover:bg-[#1A9DB3] text-white text-xs sm:text-sm font-bold shadow-btn-glow hover:shadow-btn-glow-hover transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
+          >
+            {copied ? (
+              <>
+                <Check className="w-4 h-4 text-white" />
+                <span>Copied!</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-4 h-4 text-white" />
+                <span>Copy</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

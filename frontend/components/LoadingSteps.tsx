@@ -4,28 +4,43 @@ import React, { useState, useEffect } from 'react';
 import { CheckCircle2, Sparkles, Search, Filter, ShieldCheck, FileText, Cpu } from 'lucide-react';
 
 const PIPELINE_STEPS = [
-  { title: "Extracting claim...", desc: "Isolating core factual statement and detecting language", icon: FileText },
-  { title: "Searching sources...", desc: "Querying multi-source news archives and official portals", icon: Search },
-  { title: "Checking credibility...", desc: "Scoring domain authority and filtering low-reputation sources", icon: Filter },
-  { title: "Verifying evidence...", desc: "Cross-referencing claim semantics against verified reports", icon: ShieldCheck },
-  { title: "Writing explanation...", desc: "Synthesizing transparent rationale in user's native language", icon: Sparkles },
+  { key: "claim_extraction", title: "Extracting claim...", desc: "Isolating core factual statement and detecting language", icon: FileText },
+  { key: "web_research", title: "Searching sources...", desc: "Querying multi-source news archives and official portals", icon: Search },
+  { key: "credibility_filtering", title: "Checking credibility...", desc: "Scoring domain authority and filtering low-reputation sources", icon: Filter },
+  { key: "claim_verification", title: "Verifying evidence...", desc: "Cross-referencing claim semantics against verified reports", icon: ShieldCheck },
+  { key: "explanation_generation", title: "Writing explanation...", desc: "Synthesizing transparent rationale in user's native language", icon: Sparkles },
 ];
 
-export default function LoadingSteps() {
-  const [currentStep, setCurrentStep] = useState(0);
+interface LoadingStepsProps {
+  completedSteps?: string[];
+}
+
+export default function LoadingSteps({ completedSteps = [] }: LoadingStepsProps) {
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentStep((prev) => {
-        if (prev < PIPELINE_STEPS.length - 1) {
-          return prev + 1;
-        }
-        return prev;
-      });
-    }, 1400);
+    // Update currentStepIndex based on completed steps
+    const completedCount = completedSteps.length;
+    if (completedCount > currentStepIndex) {
+      setCurrentStepIndex(completedCount);
+    }
+  }, [completedSteps, currentStepIndex]);
 
-    return () => clearInterval(timer);
-  }, []);
+  // Fallback timer if no real events arrive
+  useEffect(() => {
+    if (completedSteps.length === 0) {
+      const timer = setInterval(() => {
+        setCurrentStepIndex((prev) => {
+          if (prev < PIPELINE_STEPS.length - 1) {
+            return prev + 1;
+          }
+          return prev;
+        });
+      }, 1400);
+
+      return () => clearInterval(timer);
+    }
+  }, [completedSteps.length]);
 
   return (
     <div className="theme-card p-6 sm:p-8 max-w-2xl mx-auto space-y-6 animate-slide-up">
@@ -44,8 +59,8 @@ export default function LoadingSteps() {
       <div className="space-y-3">
         {PIPELINE_STEPS.map((step, idx) => {
           const Icon = step.icon;
-          const isDone = idx < currentStep;
-          const isCurrent = idx === currentStep;
+          const isDone = completedSteps.includes(step.key) || idx < currentStepIndex;
+          const isCurrent = idx === currentStepIndex && !completedSteps.includes(step.key);
 
           return (
             <div

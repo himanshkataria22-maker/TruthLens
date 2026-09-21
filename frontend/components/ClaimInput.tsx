@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { ArrowRight, RefreshCw, Sparkles } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { ArrowRight, RefreshCw, Sparkles, Image as ImageIcon, X, Upload } from 'lucide-react';
 
 interface EvidenceItem {
   title: string;
@@ -31,6 +31,7 @@ interface ClaimInputProps {
   onStartVerification?: () => void;
   onVerificationComplete?: (data: VerificationResult) => void;
   onError?: (errMessage: string) => void;
+  onStepComplete?: (step: string, duration: number) => void;
   isLoading?: boolean;
 }
 
@@ -53,12 +54,104 @@ export default function ClaimInput({
   onStartVerification,
   onVerificationComplete,
   onError,
+  onStepComplete,
   isLoading = false
 }: ClaimInputProps) {
   const [text, setText] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isExtractingImage, setIsExtractingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleChipClick = (sampleText: string) => {
     setText(sampleText);
+  };
+
+  const handleImageUpload = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      if (onError) onError('Please upload a valid image file (PNG or JPG).');
+      return;
+    }
+
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      if (onError) onError('Image is too large. Maximum size is 5MB.');
+      return;
+    }
+
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Extract text from image
+    setIsExtractingImage(true);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+    try {
+      const base64 = await new Promise<string>((resolve) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result as string);
+        r.readAsDataURL(file);
+      });
+
+      const res = await fetch(`${apiUrl}/verify/image`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image_data: base64 })
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.detail || 'Failed to extract text from image');
+      }
+
+      const data = await res.json();
+      setText(data.extracted_text);
+      setIsExtractingImage(false);
+    } catch (err: any) {
+      setIsExtractingImage(false);
+      if (onError) onError(err.message || 'Could not extract text from image. Please try again.');
+      setImageFile(null);
+      setImagePreview(null);
+    }
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImageUpload(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      handleImageUpload(file);
+    }
+  };
+
+  const clearImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -69,33 +162,79 @@ export default function ClaimInput({
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+    // Try streaming first, fallback to regular /verify on failure
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 35000);
-
-      const res = await fetch(`${apiUrl}/verify`, {
+      const streamRes = await fetch(`${apiUrl}/verify/stream`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: text.trim() }),
-        signal: controller.signal
+        body: JSON.stringify({ text: text.trim() })
       });
 
-      clearTimeout(timeoutId);
-
-      if (!res.ok) {
-        throw new Error(`Server returned error status ${res.status}`);
+      if (!streamRes.ok || !streamRes.body) {
+        throw new Error("Streaming not available");
       }
 
-      const data: VerificationResult = await res.json();
-      if (onVerificationComplete) {
-        onVerificationComplete(data);
+      const reader = streamRes.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const jsonStr = line.slice(6);
+            if (jsonStr.trim()) {
+              const event = JSON.parse(jsonStr);
+              
+              if (event.step === 'result') {
+                if (onVerificationComplete) {
+                  onVerificationComplete(event.data);
+                }
+              } else if (event.status === 'done' && onStepComplete) {
+                onStepComplete(event.step, event.duration_ms);
+              }
+            }
+          }
+        }
       }
-    } catch (err: any) {
-      let msg = "Could not connect to TruthLens verification server. Make sure the backend is running on port 8000.";
-      if (err.name === "AbortError") {
-        msg = "Verification request timed out. The server took longer than 30 seconds to respond.";
+    } catch (streamErr) {
+      // Fallback to regular /verify endpoint
+      console.warn("Streaming failed, falling back to /verify:", streamErr);
+      
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 35000);
+
+        const res = await fetch(`${apiUrl}/verify`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: text.trim() }),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!res.ok) {
+          throw new Error(`Server returned error status ${res.status}`);
+        }
+
+        const data: VerificationResult = await res.json();
+        if (onVerificationComplete) {
+          onVerificationComplete(data);
+        }
+      } catch (err: any) {
+        let msg = "Could not connect to TruthLens verification server. Make sure the backend is running on port 8000.";
+        if (err.name === "AbortError") {
+          msg = "Verification request timed out. The server took longer than 30 seconds to respond.";
+        }
+        if (onError) onError(msg);
       }
-      if (onError) onError(msg);
     }
   };
 
@@ -130,21 +269,68 @@ export default function ClaimInput({
           </span>
         </div>
 
-        <textarea
-          id="claim-textarea"
-          rows={4}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          disabled={isLoading}
-          placeholder="Paste a WhatsApp forward or any claim (Hindi, English, or any Indian language)..."
-          className="w-full bg-white border border-slate-300 rounded-xl p-3.5 sm:p-4 text-[#1C2740] placeholder-slate-400 text-sm sm:text-base focus:outline-none focus:border-[#22B8CF] focus:ring-2 focus:ring-[#22B8CF]/25 transition-all duration-200 resize-y leading-relaxed font-sans"
-        />
+        {/* Image Preview */}
+        {imagePreview && (
+          <div className="relative">
+            <img src={imagePreview} alt="Uploaded" className="w-full max-h-48 object-contain rounded-lg border-2 border-[#22B8CF]" />
+            <button
+              type="button"
+              onClick={clearImage}
+              className="absolute top-2 right-2 p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
-        <div className="flex items-center justify-end pt-1">
+        {isExtractingImage && (
+          <div className="p-3 bg-[#E3FAFC] border border-[#22B8CF] rounded-lg text-sm text-[#1C2740] flex items-center gap-2">
+            <RefreshCw className="w-4 h-4 animate-spin" />
+            <span>Extracting text from image...</span>
+          </div>
+        )}
+
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`relative ${isDragging ? 'ring-2 ring-[#22B8CF] rounded-xl' : ''}`}
+        >
+          <textarea
+            id="claim-textarea"
+            rows={4}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            disabled={isLoading || isExtractingImage}
+            placeholder="Paste a WhatsApp forward or any claim (Hindi, English, or any Indian language)... Or drag & drop an image here."
+            className="w-full bg-white border border-slate-300 rounded-xl p-3.5 sm:p-4 text-[#1C2740] placeholder-slate-400 text-sm sm:text-base focus:outline-none focus:border-[#22B8CF] focus:ring-2 focus:ring-[#22B8CF]/25 transition-all duration-200 resize-y leading-relaxed font-sans"
+          />
+        </div>
+
+        <div className="flex items-center justify-between gap-3 pt-1">
+          <div className="flex items-center gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/jpg"
+              onChange={handleFileInputChange}
+              className="hidden"
+              id="image-upload"
+            />
+            <label
+              htmlFor="image-upload"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition-colors cursor-pointer border border-slate-300"
+            >
+              <Upload className="w-4 h-4" />
+              <span className="hidden sm:inline">Upload Screenshot</span>
+              <span className="sm:hidden">Image</span>
+            </label>
+          </div>
+
           <button
             type="submit"
-            disabled={!text.trim() || isLoading}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3 rounded-xl bg-[#22B8CF] hover:bg-[#1A9DB3] text-white font-heading font-bold text-sm sm:text-base shadow-btn-glow hover:shadow-btn-glow-hover disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
+            disabled={!text.trim() || isLoading || isExtractingImage}
+            className="inline-flex items-center justify-center gap-2 px-7 py-3 rounded-xl bg-[#22B8CF] hover:bg-[#1A9DB3] text-white font-heading font-bold text-sm sm:text-base shadow-btn-glow hover:shadow-btn-glow-hover disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
           >
             {isLoading ? (
               <>
