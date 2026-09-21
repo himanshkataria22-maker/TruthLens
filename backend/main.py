@@ -1,15 +1,14 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from models import HealthResponse, VerificationRequest, VerificationResponse
-from pipeline import run_verification_pipeline
+from models import HealthResponse, VerifyRequest, VerifyResponse
+from pipeline import run_pipeline
 
 app = FastAPI(
     title="TruthLens API",
-    description="AI-powered multi-agent fact-checking and truth verification pipeline",
-    version="0.1.0"
+    description="Multi-agent truth verification pipeline for regional languages and English",
+    version="1.0.0"
 )
 
-# Enable CORS for frontend integration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "*"],
@@ -22,20 +21,21 @@ app.add_middleware(
 async def root():
     return {
         "name": "TruthLens API",
-        "status": "running",
+        "status": "active",
         "docs": "/docs",
         "health": "/health"
     }
 
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
 async def health_check():
-    """Basic health check endpoint."""
-    return HealthResponse(status="ok", version="0.1.0")
+    """Health check endpoint."""
+    return HealthResponse(status="ok", version="1.0.0")
 
-@app.post("/api/verify", response_model=VerificationResponse, tags=["Verification"])
-async def verify_content(request: VerificationRequest):
-    """Execute the multi-agent truth verification pipeline."""
-    if not request.text and not request.image_url:
-        raise HTTPException(status_code=400, detail="Either 'text' or 'image_url' must be provided")
-    result = await run_verification_pipeline(text=request.text)
-    return result
+@app.post("/verify", response_model=VerifyResponse, tags=["Verification"])
+async def verify(request: VerifyRequest):
+    """Execute full 5-agent TruthLens verification pipeline."""
+    if not request.text or not request.text.strip():
+        raise HTTPException(status_code=400, detail="Text claim must not be empty.")
+    
+    response = await run_pipeline(request.text)
+    return response
