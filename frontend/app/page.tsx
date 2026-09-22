@@ -79,6 +79,7 @@ export default function HomePage() {
             completedBackendSteps={completedBackendSteps}
             isBackendComplete={isBackendComplete}
             onComplete={handleAnimationComplete}
+            onError={handleError}
           />
         </div>
       )}

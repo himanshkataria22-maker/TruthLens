@@ -46,17 +46,31 @@ interface LoadingStepsProps {
   completedBackendSteps?: string[];
   isBackendComplete?: boolean;
   onComplete?: () => void;
+  onError?: (errMessage: string) => void;
 }
 
 export default function LoadingSteps({
   claimText = "",
   completedBackendSteps = [],
   isBackendComplete = false,
-  onComplete
+  onComplete,
+  onError
 }: LoadingStepsProps) {
   const [activeStepIndex, setActiveStepIndex] = useState<number>(0);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const isFinishedRef = useRef(false);
+
+  // 45-second hard timeout guard to prevent infinite loading spinner if connection drops
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (!isBackendComplete && !isFinishedRef.current) {
+        if (onError) {
+          onError("Verification pipeline request timed out after 45 seconds. Please try again.");
+        }
+      }
+    }, 45000);
+    return () => clearTimeout(timeoutId);
+  }, [isBackendComplete, onError]);
 
   // 520ms per step = ~2.6s total minimum animation duration across 5 steps
   const STEP_DURATION_MS = 520;
