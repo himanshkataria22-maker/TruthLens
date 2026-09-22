@@ -1,6 +1,6 @@
 import json
 from typing import List
-from models import ExplanationOutput, EvidenceItem
+from models import ExplanationOutput, EvidenceItem, AgentExecutionError, AgentParsingError
 from llm import call_llm_json
 
 SYSTEM_PROMPT = """You are the Explanation Agent for TruthLens.
@@ -36,9 +36,20 @@ async def generate_explanation(
         f"Generate the 3-4 sentence explanation strictly in the language '{language}'."
     )
 
-    result = await call_llm_json(
-        prompt=prompt,
-        system_prompt=SYSTEM_PROMPT,
-        response_model=ExplanationOutput
-    )
-    return result
+    try:
+        result = await call_llm_json(
+            prompt=prompt,
+            system_prompt=SYSTEM_PROMPT,
+            response_model=ExplanationOutput,
+            agent_name="ExplanationAgent"
+        )
+        return result
+    except (AgentParsingError, AgentExecutionError):
+        raise
+    except Exception as e:
+        print(f"[TruthLens ERROR] [ExplanationAgent] Explanation generation failed. Claim: '{claim[:100]}...'. Error: {str(e)}")
+        raise AgentExecutionError(
+            agent_name="ExplanationAgent",
+            message=f"Explanation Agent failed: {str(e)}",
+            raw_response=None
+        )

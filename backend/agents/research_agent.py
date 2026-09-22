@@ -174,16 +174,21 @@ async def research_queries(queries: List[str]) -> List[RawSearchResult]:
 
     for q in queries:
         query_results: List[RawSearchResult] = []
-        if search_api_key and not search_api_key.startswith("your_"):
-            try:
-                if len(search_api_key) == 40 and not search_api_key.startswith("tvly"):
-                    query_results = await _search_serper(q, search_api_key)
-                else:
-                    query_results = await _search_tavily(q, search_api_key)
-            except Exception:
+        try:
+            if search_api_key and not search_api_key.startswith("your_"):
+                try:
+                    if len(search_api_key) == 40 and not search_api_key.startswith("tvly"):
+                        query_results = await _search_serper(q, search_api_key)
+                    else:
+                        query_results = await _search_tavily(q, search_api_key)
+                except Exception as api_err:
+                    print(f"[TruthLens ERROR] [ResearchAgent] API search failed for query '{q}': {api_err}. Trying fallback.")
+                    query_results = await _search_duckduckgo_fallback(q)
+            else:
                 query_results = await _search_duckduckgo_fallback(q)
-        else:
-            query_results = await _search_duckduckgo_fallback(q)
+        except Exception as err:
+            print(f"[TruthLens ERROR] [ResearchAgent] Exception while querying '{q}': {err}")
+            query_results = _generate_grounded_fallback_sources(q)
 
         for res in query_results:
             normalized_url = res.url.split("#")[0].rstrip("/")

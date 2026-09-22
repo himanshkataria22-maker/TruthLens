@@ -1,4 +1,4 @@
-from models import ClaimExtractorOutput
+from models import ClaimExtractorOutput, AgentExecutionError, AgentParsingError
 from llm import call_llm_json
 
 SYSTEM_PROMPT = """You are the Claim Extraction Agent for TruthLens, an Indian & Global Fact-Checking platform.
@@ -13,9 +13,20 @@ Your job:
 
 async def extract_claim(raw_text: str) -> ClaimExtractorOutput:
     prompt = f"User Input Text:\n{raw_text}\n\nExtract the core factual claim, language ISO code, and 3 search queries."
-    result = await call_llm_json(
-        prompt=prompt,
-        system_prompt=SYSTEM_PROMPT,
-        response_model=ClaimExtractorOutput
-    )
-    return result
+    try:
+        result = await call_llm_json(
+            prompt=prompt,
+            system_prompt=SYSTEM_PROMPT,
+            response_model=ClaimExtractorOutput,
+            agent_name="ClaimExtractorAgent"
+        )
+        return result
+    except (AgentParsingError, AgentExecutionError):
+        raise
+    except Exception as e:
+        print(f"[TruthLens ERROR] [ClaimExtractorAgent] Failed to extract claim. Input: '{raw_text[:100]}...'. Error: {str(e)}")
+        raise AgentExecutionError(
+            agent_name="ClaimExtractorAgent",
+            message=f"Claim Extraction Agent failed: {str(e)}",
+            raw_response=None
+        )

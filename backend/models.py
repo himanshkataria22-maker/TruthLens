@@ -2,6 +2,22 @@ from typing import List, Optional, Literal
 from pydantic import BaseModel, Field
 from datetime import datetime
 
+class AgentParsingError(Exception):
+    """Raised when an LLM agent response fails JSON parsing after retry."""
+    def __init__(self, agent_name: str, raw_response: str, message: str = ""):
+        self.agent_name = agent_name
+        self.raw_response = raw_response
+        self.message = message or f"[{agent_name}] Failed to parse valid JSON response after retry."
+        super().__init__(self.message)
+
+class AgentExecutionError(Exception):
+    """Raised when an agent execution fails due to LLM/API or pipeline errors."""
+    def __init__(self, agent_name: str, message: str, raw_response: Optional[str] = None):
+        self.agent_name = agent_name
+        self.message = message
+        self.raw_response = raw_response
+        super().__init__(f"[{agent_name}] {message}")
+
 class HealthResponse(BaseModel):
     status: str = "ok"
     version: str = "0.1.0"

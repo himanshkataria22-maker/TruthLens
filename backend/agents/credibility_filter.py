@@ -35,33 +35,37 @@ def _get_domain_tier(domain: str) -> int:
     return 3
 
 def filter_sources(sources: List[RawSearchResult]) -> List[CredibleSource]:
-    tier_1_items: List[CredibleSource] = []
-    tier_2_items: List[CredibleSource] = []
-    tier_3_items: List[CredibleSource] = []
+    try:
+        tier_1_items: List[CredibleSource] = []
+        tier_2_items: List[CredibleSource] = []
+        tier_3_items: List[CredibleSource] = []
 
-    for src in sources:
-        tier = _get_domain_tier(src.domain)
-        item = CredibleSource(
-            title=src.title,
-            url=src.url,
-            snippet=src.snippet,
-            domain=src.domain,
-            tier=tier,
-            confidence_label="high confidence" if tier in (1, 2) else "low confidence"
-        )
-        if tier == 1:
-            tier_1_items.append(item)
-        elif tier == 2:
-            tier_2_items.append(item)
-        else:
-            tier_3_items.append(item)
+        for src in sources:
+            tier = _get_domain_tier(getattr(src, 'domain', ''))
+            item = CredibleSource(
+                title=getattr(src, 'title', ''),
+                url=getattr(src, 'url', ''),
+                snippet=getattr(src, 'snippet', ''),
+                domain=getattr(src, 'domain', ''),
+                tier=tier,
+                confidence_label="high confidence" if tier in (1, 2) else "low confidence"
+            )
+            if tier == 1:
+                tier_1_items.append(item)
+            elif tier == 2:
+                tier_2_items.append(item)
+            else:
+                tier_3_items.append(item)
 
-    ranked: List[CredibleSource] = tier_1_items + tier_2_items
+        ranked: List[CredibleSource] = tier_1_items + tier_2_items
 
-    if len(ranked) < 3:
-        needed = 3 - len(ranked)
-        for t3 in tier_3_items[:needed]:
-            t3.confidence_label = "low confidence"
-            ranked.append(t3)
+        if len(ranked) < 3:
+            needed = 3 - len(ranked)
+            for t3 in tier_3_items[:needed]:
+                t3.confidence_label = "low confidence"
+                ranked.append(t3)
 
-    return ranked
+        return ranked
+    except Exception as e:
+        print(f"[TruthLens ERROR] [CredibilityFilterAgent] Error filtering sources: {e}")
+        return []

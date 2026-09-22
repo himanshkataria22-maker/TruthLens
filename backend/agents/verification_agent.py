@@ -1,6 +1,6 @@
 import json
 from typing import List
-from models import CredibleSource, VerificationOutput, SourceStance
+from models import CredibleSource, VerificationOutput, SourceStance, AgentExecutionError, AgentParsingError
 from llm import call_llm_json
 
 SYSTEM_PROMPT = """You are the Verification Agent for TruthLens.
@@ -44,9 +44,20 @@ async def verify_claim(claim: str, sources: List[CredibleSource]) -> Verificatio
         f"Analyze each source's stance and determine the final verdict and confidence score."
     )
 
-    result = await call_llm_json(
-        prompt=prompt,
-        system_prompt=SYSTEM_PROMPT,
-        response_model=VerificationOutput
-    )
-    return result
+    try:
+        result = await call_llm_json(
+            prompt=prompt,
+            system_prompt=SYSTEM_PROMPT,
+            response_model=VerificationOutput,
+            agent_name="VerificationAgent"
+        )
+        return result
+    except (AgentParsingError, AgentExecutionError):
+        raise
+    except Exception as e:
+        print(f"[TruthLens ERROR] [VerificationAgent] Verification failed. Claim: '{claim[:100]}...'. Error: {str(e)}")
+        raise AgentExecutionError(
+            agent_name="VerificationAgent",
+            message=f"Verification Agent failed: {str(e)}",
+            raw_response=None
+        )

@@ -32,7 +32,14 @@ def _extract_user_claim_from_prompt(prompt: str) -> str:
         return match3.group(1).strip()
     return prompt.strip()
 
-async def call_llm_json(prompt: str, system_prompt: str, response_model: Type[T]) -> T:
+from models import AgentParsingError, AgentExecutionError
+
+async def call_llm_json(
+    prompt: str,
+    system_prompt: str,
+    response_model: Type[T],
+    agent_name: str = "LLMAgent"
+) -> T:
     api_key = os.getenv("LLM_API_KEY", "").strip()
     model = os.getenv("LLM_MODEL", "").strip()
     base_url = os.getenv("LLM_BASE_URL", "").strip()
@@ -77,6 +84,9 @@ async def call_llm_json(prompt: str, system_prompt: str, response_model: Type[T]
     if not api_key or api_key.startswith("your_"):
         return _generate_heuristic_fallback(prompt, response_model)
 
+    last_raw_content = ""
+    last_error_msg = ""
+
     for attempt in range(2):
         try:
             payload = {
@@ -94,11 +104,43 @@ async def call_llm_json(prompt: str, system_prompt: str, response_model: Type[T]
                 res.raise_for_status()
                 data = res.json()
                 content = data["choices"][0]["message"]["content"]
+                last_raw_content = content
+
+                # Safe JSON parsing & markdown code fence stripping
                 clean_json = _clean_json_str(content)
+
+                # Validate with json.loads first to catch syntax errors explicitly
+                json.loads(clean_json)
+
+                # Validate with Pydantic model
                 parsed = response_model.model_validate_json(clean_json)
                 return parsed
+
         except Exception as e:
-            messages.append({"role": "user", "content": f"The previous output failed JSON validation: {str(e)}. Please output strict valid JSON only matching schema."})
+            last_error_msg = str(e)
+            print(f"[TruthLens ERROR] [{agent_name}] Attempt {attempt + 1} failed: {last_error_msg}")
+            print(f"[TruthLens ERROR] [{agent_name}] Input Prompt: '{prompt[:120]}...'")
+            print(f"[TruthLens ERROR] [{agent_name}] Raw Output: '{last_raw_content[:200]}...'")
+
+            if attempt == 0:
+                # Add retry instruction as requested in spec
+                messages.append({
+                    "role": "user",
+                    "content": "Your previous response was not valid JSON. Return ONLY valid JSON, no other text."
+                })
+            else:
+                # Attempt 2 failed after retry
+                print(f"[TruthLens ERROR] [{agent_name}] Retry attempt failed. Raising AgentParsingError.")
+                # If API credentials are not valid in fallback env, fall back gracefully
+                if "401" in last_error_msg or "404" in last_error_msg or "API key" in last_error_msg:
+                    print(f"[TruthLens ERROR] [{agent_name}] Using fallback generator due to API authentication error.")
+                    return _generate_heuristic_fallback(prompt, response_model)
+
+                raise AgentParsingError(
+                    agent_name=agent_name,
+                    raw_response=last_raw_content,
+                    message=f"[{agent_name}] Response failed valid JSON parsing after retry: {last_error_msg}"
+                )
 
     return _generate_heuristic_fallback(prompt, response_model)
 
