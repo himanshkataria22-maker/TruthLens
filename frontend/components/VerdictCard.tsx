@@ -23,6 +23,57 @@ interface VerdictCardProps {
   onLanguageChange?: (newExplanation: string, newLang: string) => void;
 }
 
+function CircularConfidenceRing({ confidence, colorHex }: { confidence: number; colorHex: string }) {
+  const size = 56;
+  const strokeWidth = 5;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const safeConfidence = Math.min(100, Math.max(0, confidence));
+  const strokeDashoffset = circumference - (safeConfidence / 100) * circumference;
+
+  return (
+    <div className="flex items-center gap-3 bg-white/90 px-3.5 py-2 rounded-xl border border-slate-200/90 shadow-xs shrink-0">
+      <div className="relative inline-flex items-center justify-center shrink-0">
+        <svg width={size} height={size} className="transform -rotate-90">
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke="#E2E8F0"
+            strokeWidth={strokeWidth}
+            fill="transparent"
+          />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={colorHex}
+            strokeWidth={strokeWidth}
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            fill="transparent"
+            className="transition-all duration-1000 ease-out"
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center text-center">
+          <span className="font-mono text-xs font-black text-[#0A1128]">
+            {safeConfidence}%
+          </span>
+        </div>
+      </div>
+      <div className="flex flex-col">
+        <span className="text-[11px] font-bold text-[#0A1128] uppercase tracking-wider font-mono">
+          Confidence
+        </span>
+        <span className="text-[10px] text-slate-500 font-medium leading-none mt-0.5">
+          Score Ring
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function VerdictCard({
   claim,
   verdict,
@@ -90,36 +141,32 @@ export default function VerdictCard({
       case "SUPPORTED":
         return {
           title: "SUPPORTED",
-          borderClass: "border-l-[6px] sm:border-l-[8px] border-l-[#16A34A]",
-          badgeBg: "bg-[#16A34A] text-white",
-          progressBg: "bg-[#16A34A]",
+          colorHex: "#2ECC71",
+          badgeBg: "bg-[#2ECC71] text-white",
           icon: <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-white shrink-0" />,
           label: "Verified Factual",
         };
       case "FALSE":
         return {
           title: "FALSE",
-          borderClass: "border-l-[6px] sm:border-l-[8px] border-l-[#DC2626]",
-          badgeBg: "bg-[#DC2626] text-white",
-          progressBg: "bg-[#DC2626]",
+          colorHex: "#E85C4A",
+          badgeBg: "bg-[#E85C4A] text-white",
           icon: <XCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white shrink-0" />,
           label: "Debunked / False Claim",
         };
       case "MISLEADING":
         return {
           title: "MISLEADING",
-          borderClass: "border-l-[6px] sm:border-l-[8px] border-l-[#F59E0B]",
-          badgeBg: "bg-[#F59E0B] text-white",
-          progressBg: "bg-[#F59E0B]",
+          colorHex: "#FFB800",
+          badgeBg: "bg-[#FFB800] text-white",
           icon: <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-white shrink-0" />,
           label: "Partly True / Missing Context",
         };
       default:
         return {
           title: "UNVERIFIABLE",
-          borderClass: "border-l-[6px] sm:border-l-[8px] border-l-[#64748B]",
-          badgeBg: "bg-[#64748B] text-white",
-          progressBg: "bg-[#64748B]",
+          colorHex: "#9AA5B1",
+          badgeBg: "bg-[#9AA5B1] text-white",
           icon: <HelpCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white shrink-0" />,
           label: "Insufficient Credible Evidence",
         };
@@ -157,7 +204,7 @@ export default function VerdictCard({
     const emoji = getVerdictEmoji();
     const topSource = evidence?.[0]?.url ? `\n${evidence[0].url}` : '';
     const shortClaim = claim.length > 80 ? claim.substring(0, 80) + "..." : claim;
-    const reason = currentExplanation.split('.')[0] + '.'; // First sentence
+    const reason = currentExplanation.split('.')[0] + '.';
     
     const summary = `${emoji} ${normalizedVerdict}\n\n"${shortClaim}"\n\n${reason}${topSource}\n\n✓ Verified with TruthLens`;
     const encoded = encodeURIComponent(summary);
@@ -181,9 +228,12 @@ export default function VerdictCard({
   };
 
   return (
-    <div className={`theme-card ${vInfo.borderClass} p-4 sm:p-7 animate-slide-up space-y-5`}>
+    <div
+      className="theme-card p-4 sm:p-7 animate-slide-up space-y-5 border-2 border-l-[8px] shadow-xl"
+      style={{ borderColor: vInfo.colorHex }}
+    >
       {/* 1. Verdict Banner Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80">
         <div>
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-[#1C2740]/70 font-mono">
@@ -195,30 +245,19 @@ export default function VerdictCard({
             </span>
           </div>
 
-          <div className="mt-2 flex flex-wrap items-center gap-2 sm:gap-3">
-            <span className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-heading text-base sm:text-xl font-extrabold shadow-xs ${vInfo.badgeBg}`}>
+          <div className="mt-2.5 flex flex-wrap items-center gap-2 sm:gap-3">
+            <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl font-heading text-lg sm:text-2xl font-black shadow-sm ${vInfo.badgeBg}`}>
               {vInfo.icon}
               <span>{vInfo.title}</span>
             </span>
-            <span className="text-xs sm:text-sm font-semibold text-[#1C2740]/80">
+            <span className="text-xs sm:text-sm font-bold text-[#1C2740]/90">
               {vInfo.label}
             </span>
           </div>
         </div>
 
-        {/* Confidence Progress */}
-        <div className="w-full sm:w-52 bg-slate-50 p-3 rounded-xl border border-slate-200 shrink-0">
-          <div className="flex items-center justify-between text-xs font-semibold text-[#1C2740] mb-1">
-            <span>Confidence Score</span>
-            <span className="font-mono text-sm font-bold text-[#1C2740]">{confidence}%</span>
-          </div>
-          <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-            <div
-              className={`h-full ${vInfo.progressBg} transition-all duration-800 ease-out`}
-              style={{ width: `${Math.max(5, confidence)}%` }}
-            />
-          </div>
-        </div>
+        {/* Circular Confidence Ring */}
+        <CircularConfidenceRing confidence={confidence} colorHex={vInfo.colorHex} />
       </div>
 
       {/* 2. Quoted Claim Block */}
