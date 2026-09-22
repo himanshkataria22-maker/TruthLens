@@ -10,36 +10,52 @@ import { AlertCircle, RotateCcw } from 'lucide-react';
 export default function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<VerificationResult | null>(null);
+  const [pendingResult, setPendingResult] = useState<VerificationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [completedSteps, setCompletedSteps] = useState<string[]>([]);
+  const [completedBackendSteps, setCompletedBackendSteps] = useState<string[]>([]);
+  const [currentClaim, setCurrentClaim] = useState<string>('');
+  const [isBackendComplete, setIsBackendComplete] = useState<boolean>(false);
 
-  const handleStartVerification = () => {
+  const handleStartVerification = (claimText: string) => {
     setIsLoading(true);
     setError(null);
     setResult(null);
-    setCompletedSteps([]);
+    setPendingResult(null);
+    setCompletedBackendSteps([]);
+    setCurrentClaim(claimText);
+    setIsBackendComplete(false);
   };
 
   const handleStepComplete = (step: string, duration: number) => {
-    setCompletedSteps(prev => [...prev, step]);
+    setCompletedBackendSteps(prev => [...prev, step]);
   };
 
   const handleVerificationComplete = (data: VerificationResult) => {
-    setResult(data);
+    setPendingResult(data);
+    setIsBackendComplete(true);
+  };
+
+  const handleAnimationComplete = () => {
+    if (pendingResult) {
+      setResult(pendingResult);
+    }
     setIsLoading(false);
-    setError(null);
   };
 
   const handleError = (errMsg: string) => {
     setError(errMsg);
     setIsLoading(false);
+    setIsBackendComplete(false);
   };
 
   const handleReset = () => {
     setResult(null);
+    setPendingResult(null);
     setError(null);
     setIsLoading(false);
-    setCompletedSteps([]);
+    setCompletedBackendSteps([]);
+    setCurrentClaim('');
+    setIsBackendComplete(false);
   };
 
   return (
@@ -55,14 +71,19 @@ export default function HomePage() {
         />
       )}
 
-      {/* 2. Animated Loading Progress Display */}
+      {/* 2. Step-by-Step Progress Animation */}
       {isLoading && (
-        <div className="py-6">
-          <LoadingSteps completedSteps={completedSteps} />
+        <div className="py-2">
+          <LoadingSteps
+            claimText={currentClaim}
+            completedBackendSteps={completedBackendSteps}
+            isBackendComplete={isBackendComplete}
+            onComplete={handleAnimationComplete}
+          />
         </div>
       )}
 
-      {/* 3. Error Card with Retry */}
+      {/* 3. Error Display */}
       {error && !isLoading && (
         <div className="theme-card border-l-[8px] border-l-[#DC2626] p-6 sm:p-8 max-w-2xl mx-auto space-y-4 text-center animate-slide-up">
           <div className="w-12 h-12 rounded-xl bg-rose-100 flex items-center justify-center text-[#DC2626] mx-auto">
@@ -86,7 +107,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* 4. Complete Verdict & Evidence Trail Result Screen */}
+      {/* 4. Verdict & Evidence Results */}
       {result && !isLoading && (
         <div className="space-y-8 max-w-4xl mx-auto animate-slide-up">
           <VerdictCard
