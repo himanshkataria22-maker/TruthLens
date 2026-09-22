@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { ArrowRight, RefreshCw, Sparkles, Image as ImageIcon, X, Upload } from 'lucide-react';
+import { ArrowRight, RefreshCw, Sparkles, Image as ImageIcon, X, Upload, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 
 interface EvidenceItem {
   title: string;
@@ -28,7 +28,7 @@ export interface VerificationResult {
 }
 
 interface ClaimInputProps {
-  onStartVerification?: () => void;
+  onStartVerification?: (claimText: string) => void;
   onVerificationComplete?: (data: VerificationResult) => void;
   onError?: (errMessage: string) => void;
   onStepComplete?: (step: string, duration: number) => void;
@@ -37,16 +37,28 @@ interface ClaimInputProps {
 
 const SAMPLE_CHIPS = [
   {
-    tag: "🇮🇳 Hindi Forward",
-    text: "सावधान! 500 रुपये के नए नोट में अगर हरी पट्टी गांधी जी के पास नहीं है तो वह नोट नकली है।"
+    tag: "Hindi Forward",
+    verdict: "MISLEADING",
+    text: "सावधान! 500 रुपये के नए नोट में अगर हरी पट्टी गांधी जी के पास नहीं है तो वह नोट नकली है।",
+    badgeBg: "bg-[#FFB800]/20 text-[#FFB800] border-[#FFB800]/50",
+    hoverBorder: "hover:border-[#FFB800]",
+    icon: <AlertTriangle className="w-3 h-3 text-[#FFB800] shrink-0" />
   },
   {
-    tag: "🌐 Viral Hoax",
-    text: "UNESCO has officially declared the Indian National Anthem Jana Gana Mana as the best national anthem in the world."
+    tag: "Viral Hoax",
+    verdict: "FALSE",
+    text: "UNESCO has officially declared the Indian National Anthem Jana Gana Mana as the best national anthem in the world.",
+    badgeBg: "bg-[#E85C4A]/20 text-[#E85C4A] border-[#E85C4A]/50",
+    hoverBorder: "hover:border-[#E85C4A]",
+    icon: <XCircle className="w-3 h-3 text-[#E85C4A] shrink-0" />
   },
   {
-    tag: "🏏 Verified Fact",
-    text: "India won the ICC Men's T20 World Cup in June 2024 by defeating South Africa in Barbados."
+    tag: "Verified Fact",
+    verdict: "SUPPORTED",
+    text: "India won the ICC Men's T20 World Cup in June 2024 by defeating South Africa in Barbados.",
+    badgeBg: "bg-[#2ECC71]/20 text-[#2ECC71] border-[#2ECC71]/50",
+    hoverBorder: "hover:border-[#2ECC71]",
+    icon: <CheckCircle2 className="w-3 h-3 text-[#2ECC71] shrink-0" />
   }
 ];
 
@@ -158,7 +170,7 @@ export default function ClaimInput({
     e.preventDefault();
     if (!text.trim() || isLoading) return;
 
-    if (onStartVerification) onStartVerification();
+    if (onStartVerification) onStartVerification(text.trim());
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -243,19 +255,69 @@ export default function ClaimInput({
   return (
     <div className="w-full space-y-5">
       {/* Hero Section */}
-      <div className="text-center space-y-2.5 max-w-2xl mx-auto">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/20 border border-white/30 text-white shadow-xs backdrop-blur-xs">
-          <Sparkles className="w-3.5 h-3.5 text-[#22B8CF]" />
-          <span>Real-time Multi-Agent Fact Verification</span>
+      <div className="relative text-center space-y-2.5 max-w-2xl mx-auto py-2">
+        {/* Network / Node Decorative Pattern Overlay */}
+        <div className="absolute inset-0 pointer-events-none opacity-15 overflow-hidden z-0" aria-hidden="true">
+          {/* Top-Right Cluster */}
+          <svg className="absolute -top-4 -right-8 w-64 h-64 text-[#00D9FF]" viewBox="0 0 200 200" fill="none">
+            <line x1="140" y1="30" x2="180" y2="70" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" opacity="0.7" />
+            <line x1="180" y1="70" x2="130" y2="110" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+            <line x1="130" y1="110" x2="170" y2="150" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" opacity="0.4" />
+            <line x1="140" y1="30" x2="90" y2="60" stroke="currentColor" strokeWidth="1" opacity="0.6" />
+            <line x1="90" y1="60" x2="130" y2="110" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+
+            <circle cx="140" cy="30" r="4.5" fill="currentColor" />
+            <circle cx="140" cy="30" r="9" fill="currentColor" fillOpacity="0.25" />
+
+            <circle cx="180" cy="70" r="3.5" fill="currentColor" />
+
+            <circle cx="130" cy="110" r="5" fill="currentColor" />
+            <circle cx="130" cy="110" r="10" fill="currentColor" fillOpacity="0.25" />
+
+            <circle cx="170" cy="150" r="3" fill="currentColor" />
+
+            <circle cx="90" cy="60" r="4" fill="currentColor" />
+            <circle cx="90" cy="60" r="7" fill="currentColor" fillOpacity="0.2" />
+          </svg>
+
+          {/* Bottom-Left Cluster */}
+          <svg className="absolute -bottom-4 -left-8 w-64 h-64 text-[#00D9FF]" viewBox="0 0 200 200" fill="none">
+            <line x1="30" y1="140" x2="70" y2="100" stroke="currentColor" strokeWidth="1" opacity="0.7" />
+            <line x1="70" y1="100" x2="110" y2="150" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" opacity="0.5" />
+            <line x1="110" y1="150" x2="50" y2="180" stroke="currentColor" strokeWidth="1" opacity="0.4" />
+            <line x1="70" y1="100" x2="40" y2="60" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" opacity="0.6" />
+            <line x1="40" y1="60" x2="110" y2="150" stroke="currentColor" strokeWidth="1" opacity="0.3" />
+
+            <circle cx="30" cy="140" r="4.5" fill="currentColor" />
+            <circle cx="30" cy="140" r="9" fill="currentColor" fillOpacity="0.25" />
+
+            <circle cx="70" cy="100" r="3.5" fill="currentColor" />
+
+            <circle cx="110" cy="150" r="4" fill="currentColor" />
+            <circle cx="110" cy="150" r="8" fill="currentColor" fillOpacity="0.25" />
+
+            <circle cx="50" cy="180" r="3" fill="currentColor" />
+
+            <circle cx="40" cy="60" r="4" fill="currentColor" />
+            <circle cx="40" cy="60" r="7" fill="currentColor" fillOpacity="0.2" />
+          </svg>
         </div>
 
-        <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white leading-tight">
-          Verify before you <span className="text-[#22B8CF] underline decoration-[#22B8CF]/50 underline-offset-8">share</span>
-        </h1>
+        {/* Hero Content */}
+        <div className="relative z-10 space-y-2.5">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/20 border border-white/30 text-white shadow-xs backdrop-blur-xs">
+            <Sparkles className="w-3.5 h-3.5 text-[#22B8CF]" />
+            <span>Real-time Multi-Agent Fact Verification</span>
+          </div>
 
-        <p className="text-[#EAF0FA] text-xs sm:text-sm md:text-base leading-relaxed font-normal max-w-xl mx-auto">
-          AI-powered truth verification for WhatsApp forwards, news, and viral claims in Indian languages & English.
-        </p>
+          <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white leading-tight">
+            Verify before you <span className="text-[#22B8CF] underline decoration-[#22B8CF]/50 underline-offset-8">share</span>
+          </h1>
+
+          <p className="text-[#EAF0FA] text-xs sm:text-sm md:text-base leading-relaxed font-normal max-w-xl mx-auto">
+            AI-powered truth verification for WhatsApp forwards, news, and viral claims in Indian languages & English.
+          </p>
+        </div>
       </div>
 
       {/* Input Card */}
@@ -330,7 +392,11 @@ export default function ClaimInput({
           <button
             type="submit"
             disabled={!text.trim() || isLoading || isExtractingImage}
-            className="inline-flex items-center justify-center gap-2 px-7 py-3 rounded-xl bg-[#22B8CF] hover:bg-[#1A9DB3] text-white font-heading font-bold text-sm sm:text-base shadow-btn-glow hover:shadow-btn-glow-hover disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
+            className={`inline-flex items-center justify-center gap-2 px-7 py-3 rounded-xl font-heading font-bold text-sm sm:text-base transition-all duration-200 ${
+              !text.trim() || isLoading || isExtractingImage
+                ? 'bg-slate-200 text-slate-400 border border-slate-300/80 cursor-not-allowed opacity-60 shadow-none pointer-events-none'
+                : 'bg-[#00D9FF] hover:bg-[#00C2E8] text-[#0A1128] font-extrabold shadow-lg shadow-[#00D9FF]/30 hover:shadow-xl hover:shadow-[#00D9FF]/40 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer active:scale-95'
+            }`}
           >
             {isLoading ? (
               <>
@@ -340,7 +406,7 @@ export default function ClaimInput({
             ) : (
               <>
                 <span>Verify Claim</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 stroke-[2.5]" />
               </>
             )}
           </button>
@@ -359,10 +425,13 @@ export default function ClaimInput({
               type="button"
               onClick={() => handleChipClick(chip.text)}
               disabled={isLoading}
-              className="px-3 py-2 rounded-xl bg-[#324367]/90 hover:bg-[#283756] border border-white/25 text-xs text-white transition-all duration-200 text-left flex items-center gap-1.5 shadow-xs hover:-translate-y-0.5 cursor-pointer max-w-full"
+              className={`px-3 py-2 rounded-xl bg-[#324367]/90 hover:bg-[#283756] border border-white/25 ${chip.hoverBorder} text-xs text-white transition-all duration-200 text-left flex items-center gap-2 shadow-xs hover:-translate-y-0.5 cursor-pointer max-w-full group`}
             >
-              <span className="font-bold text-[#22B8CF] shrink-0 text-[11px]">{chip.tag}:</span>
-              <span className="truncate max-w-[170px] sm:max-w-[240px] text-white/95 text-[11px] sm:text-xs">{chip.text}</span>
+              <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-lg border shrink-0 ${chip.badgeBg}`}>
+                {chip.icon}
+                <span>{chip.tag}</span>
+              </span>
+              <span className="truncate max-w-[150px] sm:max-w-[220px] text-white/95 text-[11px] sm:text-xs font-medium">{chip.text}</span>
             </button>
           ))}
         </div>
