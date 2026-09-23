@@ -1,7 +1,12 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { ArrowRight, RefreshCw, Sparkles, Image as ImageIcon, X, Upload, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+
+const AnimatedBackground = dynamic(() => import('./AnimatedBackground'), {
+  ssr: false,
+});
 
 interface EvidenceItem {
   title: string;
@@ -23,6 +28,7 @@ export interface VerificationResult {
   verdict: string;
   confidence: number;
   explanation: string;
+  explanations?: Record<string, string>;
   evidence: EvidenceItem[];
   steps: StepLog[];
 }
@@ -116,6 +122,14 @@ export default function ClaimInput({
         body: JSON.stringify({ image_data: base64 })
       });
 
+      if (res.status === 429) {
+        setIsExtractingImage(false);
+        if (onError) onError('Please wait a few seconds before verifying another claim.');
+        setImageFile(null);
+        setImagePreview(null);
+        return;
+      }
+
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.detail || 'Failed to extract text from image');
@@ -182,6 +196,11 @@ export default function ClaimInput({
         body: JSON.stringify({ text: text.trim() })
       });
 
+      if (streamRes.status === 429) {
+        if (onError) onError('Please wait a few seconds before verifying another claim.');
+        return;
+      }
+
       if (!streamRes.ok || !streamRes.body) {
         throw new Error("Streaming not available");
       }
@@ -215,7 +234,12 @@ export default function ClaimInput({
           }
         }
       }
-    } catch (streamErr) {
+    } catch (streamErr: any) {
+      if (streamErr?.status === 429) {
+        if (onError) onError('Please wait a few seconds before verifying another claim.');
+        return;
+      }
+
       // Fallback to regular /verify endpoint
       console.warn("Streaming failed, falling back to /verify:", streamErr);
       
@@ -232,6 +256,11 @@ export default function ClaimInput({
 
         clearTimeout(timeoutId);
 
+        if (res.status === 429) {
+          if (onError) onError('Please wait a few seconds before verifying another claim.');
+          return;
+        }
+
         if (!res.ok) {
           throw new Error(`Server returned error status ${res.status}`);
         }
@@ -242,7 +271,9 @@ export default function ClaimInput({
         }
       } catch (err: any) {
         let msg = "Could not connect to TruthLens verification server. Make sure the backend is running on port 8000.";
-        if (err.name === "AbortError") {
+        if (err.status === 429 || err.message === "429") {
+          msg = "Please wait a few seconds before verifying another claim.";
+        } else if (err.name === "AbortError") {
           msg = "Verification request timed out. The server took longer than 30 seconds to respond.";
         }
         if (onError) onError(msg);
@@ -255,56 +286,12 @@ export default function ClaimInput({
   return (
     <div className="w-full space-y-5">
       {/* Hero Section */}
-      <div className="relative text-center space-y-2.5 max-w-2xl mx-auto py-2">
-        {/* Network / Node Decorative Pattern Overlay */}
-        <div className="absolute inset-0 pointer-events-none opacity-15 overflow-hidden z-0" aria-hidden="true">
-          {/* Top-Right Cluster */}
-          <svg className="absolute -top-4 -right-8 w-64 h-64 text-[#00D9FF]" viewBox="0 0 200 200" fill="none">
-            <line x1="140" y1="30" x2="180" y2="70" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" opacity="0.7" />
-            <line x1="180" y1="70" x2="130" y2="110" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-            <line x1="130" y1="110" x2="170" y2="150" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" opacity="0.4" />
-            <line x1="140" y1="30" x2="90" y2="60" stroke="currentColor" strokeWidth="1" opacity="0.6" />
-            <line x1="90" y1="60" x2="130" y2="110" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-
-            <circle cx="140" cy="30" r="4.5" fill="currentColor" />
-            <circle cx="140" cy="30" r="9" fill="currentColor" fillOpacity="0.25" />
-
-            <circle cx="180" cy="70" r="3.5" fill="currentColor" />
-
-            <circle cx="130" cy="110" r="5" fill="currentColor" />
-            <circle cx="130" cy="110" r="10" fill="currentColor" fillOpacity="0.25" />
-
-            <circle cx="170" cy="150" r="3" fill="currentColor" />
-
-            <circle cx="90" cy="60" r="4" fill="currentColor" />
-            <circle cx="90" cy="60" r="7" fill="currentColor" fillOpacity="0.2" />
-          </svg>
-
-          {/* Bottom-Left Cluster */}
-          <svg className="absolute -bottom-4 -left-8 w-64 h-64 text-[#00D9FF]" viewBox="0 0 200 200" fill="none">
-            <line x1="30" y1="140" x2="70" y2="100" stroke="currentColor" strokeWidth="1" opacity="0.7" />
-            <line x1="70" y1="100" x2="110" y2="150" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" opacity="0.5" />
-            <line x1="110" y1="150" x2="50" y2="180" stroke="currentColor" strokeWidth="1" opacity="0.4" />
-            <line x1="70" y1="100" x2="40" y2="60" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" opacity="0.6" />
-            <line x1="40" y1="60" x2="110" y2="150" stroke="currentColor" strokeWidth="1" opacity="0.3" />
-
-            <circle cx="30" cy="140" r="4.5" fill="currentColor" />
-            <circle cx="30" cy="140" r="9" fill="currentColor" fillOpacity="0.25" />
-
-            <circle cx="70" cy="100" r="3.5" fill="currentColor" />
-
-            <circle cx="110" cy="150" r="4" fill="currentColor" />
-            <circle cx="110" cy="150" r="8" fill="currentColor" fillOpacity="0.25" />
-
-            <circle cx="50" cy="180" r="3" fill="currentColor" />
-
-            <circle cx="40" cy="60" r="4" fill="currentColor" />
-            <circle cx="40" cy="60" r="7" fill="currentColor" fillOpacity="0.2" />
-          </svg>
-        </div>
+      <div className="relative w-full min-h-[160px] text-center py-4 px-4 overflow-hidden rounded-2xl flex flex-col justify-center items-center" style={{ position: 'relative' }}>
+        {/* Live Animated Canvas Background */}
+        <AnimatedBackground />
 
         {/* Hero Content */}
-        <div className="relative z-10 space-y-2.5">
+        <div className="relative z-10 space-y-2.5 max-w-2xl mx-auto">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/20 border border-white/30 text-white shadow-xs backdrop-blur-xs">
             <Sparkles className="w-3.5 h-3.5 text-[#22B8CF]" />
             <span>Real-time Multi-Agent Fact Verification</span>
