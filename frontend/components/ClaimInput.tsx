@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { ArrowRight, RefreshCw, Sparkles, Image as ImageIcon, X, Upload, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import { ArrowRight, RefreshCw, Sparkles, Image as ImageIcon, X, Upload, CheckCircle2, XCircle, AlertTriangle, AlertCircle } from 'lucide-react';
+import { validateClaimText, getCharacterWarning } from '@/lib/validators';
 
 interface EvidenceItem {
   title: string;
@@ -180,6 +181,13 @@ export default function ClaimInput({
     e.preventDefault();
     if (!text.trim() || isLoading) return;
 
+    // Validate claim text
+    const validation = validateClaimText(text);
+    if (!validation.isValid) {
+      if (onError) onError(validation.error || "Invalid input");
+      return;
+    }
+
     if (onStartVerification) onStartVerification(text.trim());
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -259,7 +267,8 @@ export default function ClaimInput({
         }
 
         if (!res.ok) {
-          throw new Error(`Server returned error status ${res.status}`);
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.detail || `Server returned error status ${res.status}`);
         }
 
         const data: VerificationResult = await res.json();
@@ -280,6 +289,8 @@ export default function ClaimInput({
   };
 
   const charCount = text.length;
+  const validation = validateClaimText(text);
+  const charWarning = getCharacterWarning(charCount);
 
   return (
     <div className="w-full space-y-5">
@@ -350,6 +361,22 @@ export default function ClaimInput({
           />
         </div>
 
+        {/* Validation Error Message */}
+        {charCount > 0 && !validation.isValid && (
+          <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
+            <p className="text-xs sm:text-sm text-red-700 font-medium">{validation.error}</p>
+          </div>
+        )}
+
+        {/* Character Count Warning */}
+        {charCount > 0 && charWarning.level !== 'normal' && (
+          <div className={`text-xs text-right font-medium ${charWarning.level === 'critical' ? 'text-red-600' : 'text-amber-600'}`}>
+            {charWarning.level === 'critical' && `⚠️ ${charCount} / ${2000} characters`}
+            {charWarning.level === 'warning' && `${charCount} / ${2000} characters`}
+          </div>
+        )}
+
         <div className="flex items-center justify-between gap-3 pt-1">
           <div className="flex items-center gap-2">
             <input
@@ -372,9 +399,9 @@ export default function ClaimInput({
 
           <button
             type="submit"
-            disabled={!text.trim() || isLoading || isExtractingImage}
+            disabled={!text.trim() || !validation.isValid || isLoading || isExtractingImage}
             className={`inline-flex items-center justify-center gap-2 px-7 py-3 rounded-xl font-heading font-bold text-sm sm:text-base transition-all duration-200 ${
-              !text.trim() || isLoading || isExtractingImage
+              !text.trim() || !validation.isValid || isLoading || isExtractingImage
                 ? 'bg-slate-200 text-slate-400 border border-slate-300/80 cursor-not-allowed opacity-60 shadow-none pointer-events-none'
                 : 'bg-[#00D9FF] hover:bg-[#00C2E8] text-[#0A1128] font-extrabold shadow-lg shadow-[#00D9FF]/30 hover:shadow-xl hover:shadow-[#00D9FF]/40 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer active:scale-95'
             }`}

@@ -12,6 +12,7 @@ from llm import extract_text_from_image
 from agents.explanation_agent import generate_explanation
 from demo_cache import find_cached_claim, stream_cached_result
 from rate_limiter import rate_limiter, get_client_ip
+from validators import validate_claim_text
 import json
 import base64
 import os
@@ -115,8 +116,10 @@ async def health_check():
 @app.post("/verify", response_model=VerifyResponse, tags=["Verification"])
 async def verify(request: VerifyRequest):
     """Execute full 5-agent TruthLens verification pipeline."""
-    if not request.text or not request.text.strip():
-        raise HTTPException(status_code=400, detail="Text claim must not be empty.")
+    # Validate claim text
+    is_valid, error_msg = validate_claim_text(request.text)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=error_msg)
     
     # Check demo cache
     demo_mode = os.getenv("DEMO_MODE", "false").lower() == "true"
@@ -136,8 +139,10 @@ async def verify(request: VerifyRequest):
 @app.post("/verify/stream", tags=["Verification"])
 async def verify_stream(request: VerifyRequest):
     """Execute pipeline with Server-Sent Events streaming progress."""
-    if not request.text or not request.text.strip():
-        raise HTTPException(status_code=400, detail="Text claim must not be empty.")
+    # Validate claim text
+    is_valid, error_msg = validate_claim_text(request.text)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=error_msg)
     
     # Check demo cache
     demo_mode = os.getenv("DEMO_MODE", "false").lower() == "true"
