@@ -207,23 +207,59 @@ def _generate_heuristic_fallback(prompt: str, response_model: Type[T]) -> T:
         else:
             return response_model(verdict="UNVERIFIABLE", confidence=50, per_source_stance=[])
 
+    elif name == "MultiExplanationOutput":
+        all_explanations = _heuristic_all_explanations(prompt)
+        return response_model(explanations=all_explanations)
+
     elif name == "ExplanationOutput":
-        lower_p = prompt.lower()
-        if "500" in lower_p:
-            exp = "यह दावा पूरी तरह से गलत (FALSE) है। भारतीय रिज़र्व बैंक (RBI) और PIB फैक्ट चेक के अनुसार 500 रुपये के नोट पर हरी सुरक्षा पट्टी चाहे महात्मा गांधी की तस्वीर के पास हो या गवर्नर के हस्ताक्षर के पास, दोनों प्रकार के नोट पूरी तरह असली और वैध हैं। सुरक्षा धागे की छपाई प्रक्रिया के कारण यह मामूली अंतर होता है और नोट नकली नहीं होता।"
-            lang = "hi"
-        elif "unesco" in lower_p:
-            exp = "This claim is completely FALSE. UNESCO has never conducted any competition or issued any announcement declaring the Indian National Anthem 'Jana Gana Mana' as the best national anthem in the world. Official fact-checking organizations and UNESCO representatives have repeatedly debunked this recurring internet hoax."
-            lang = "en"
-        elif "t20" in lower_p:
-            exp = "This claim is fully SUPPORTED. On June 29, 2024, the Indian cricket team led by Rohit Sharma won the ICC Men's T20 World Cup 2024 by defeating South Africa by 7 runs in the final held at Kensington Oval in Barbados, as confirmed by official ICC records and international news media."
-            lang = "en"
-        else:
-            exp = "उपलब्ध स्रोतों के आधार पर दावे की जांच की गई।"
-            lang = "hi"
-        return response_model(explanation=exp, language=lang)
+        all_explanations = _heuristic_all_explanations(prompt)
+        lang_match = re.search(
+            r"(?:User Language ISO|Primary Language ISO|strictly in the language)\s*:?\s*['\"]?([a-z]{2})['\"]?",
+            prompt,
+            re.IGNORECASE,
+        )
+        lang = (lang_match.group(1) if lang_match else "en").lower()
+        exp = all_explanations.get(lang) or all_explanations.get("en") or next(iter(all_explanations.values()))
+        return response_model(explanation=exp, language=lang, explanations={lang: exp})
 
     raise ValueError(f"Unknown fallback model: {name}")
+
+
+def _heuristic_all_explanations(prompt: str) -> dict:
+    """Fallback explanations in all 5 UI languages for demo/offline mode."""
+    lower_p = prompt.lower()
+    if "500" in lower_p:
+        return {
+            "en": "This claim is completely FALSE. According to the Reserve Bank of India (RBI) and PIB Fact Check, ₹500 currency notes are completely genuine and legal tender regardless of whether the green security strip is near Mahatma Gandhi's portrait or the Governor's signature. This minor variation is due to the security thread printing process and does not make the note fake.",
+            "hi": "यह दावा पूरी तरह से गलत (FALSE) है। भारतीय रिज़र्व बैंक (RBI) और PIB फैक्ट चेक के अनुसार 500 रुपये के नोट पर हरी सुरक्षा पट्टी चाहे महात्मा गांधी की तस्वीर के पास हो या गवर्नर के हस्ताक्षर के पास, दोनों प्रकार के नोट पूरी तरह असली और वैध हैं। सुरक्षा धागे की छपाई प्रक्रिया के कारण यह मामूली अंतर होता है और नोट नकली नहीं होता।",
+            "mr": "हा दावा पूर्णपणे खोटा (FALSE) आहे. भारतीय रिझर्व्ह बँक (RBI) आणि PIB Fact Check नुसार, ₹500 च्या नोटवर हिरवी सुरक्षा पट्टी महात्मा गांधींच्या चित्राजवळ असो किंवा गव्हर्नरच्या स्वाक्षरीजवळ, दोन्ही प्रकारच्या नोटा खऱ्या आणि कायदेशीर आहेत. सिक्युरिटी थ्रेड छपाईमुळे हा किरकोळ फरक पडतो.",
+            "ta": "இந்த கூற்று முற்றிலும் தவறானது (FALSE). RBI மற்றும் PIB Fact Check தகவல்படி, ₹500 நோட்டில் உள்ள பச்சை பாதுகாப்பு பட்டை மகாத்மா காந்தியின் படத்திற்கு அருகில் இருந்தாலும் ஆளுநரின் கையொப்பத்திற்கு அருகில் இருந்தாலும் இரு நோட்டுகளும் செல்லுபடியாகும்.",
+            "bn": "এই দাবিটি সম্পূর্ণ মিথ্যা (FALSE)। RBI এবং PIB Fact Check অনুসারে, ৫০০ টাকার নোটে সবুজ নিরাপত্তা ফিতা মহাত্মা গান্ধীর ছবির কাছে থাকুক বা গভর্নরের স্বাক্ষরের কাছে থাকুক, উভয় নোটই সম্পূর্ণ আসল ও বৈধ।",
+        }
+    if "unesco" in lower_p:
+        return {
+            "en": "This claim is completely FALSE. UNESCO has never conducted any competition or issued any announcement declaring the Indian National Anthem 'Jana Gana Mana' as the best national anthem in the world. Official fact-checking organizations and UNESCO representatives have repeatedly debunked this recurring internet hoax.",
+            "hi": "यह दावा पूरी तरह से गलत (FALSE) है। यूनेस्को (UNESCO) ने कभी भी ऐसी कोई प्रतियोगिता आयोजित नहीं की है और न ही भारतीय राष्ट्रगान 'जन गण मन' को दुनिया का सर्वश्रेष्ठ राष्ट्रगान घोषित करने की कोई घोषणा की है।",
+            "mr": "हा दावा पूर्णपणे खोटा (FALSE) आहे. युनेस्कोने भारतीय राष्ट्रगीत 'जन गण मन' ला जगातील सर्वोत्तम राष्ट्रगीत घोषित करणारी कोणतीही स्पर्धा आयोजित केलेली नाही.",
+            "ta": "இந்த கூற்று முற்றிலும் தவறானது (FALSE). யுனெஸ்கோ இந்திய தேசிய கீதமான 'ஜன கண மன'வை உலகின் சிறந்த தேசிய கீதமாக அறிவிக்க எந்த போட்டியையும் நடத்தவில்லை.",
+            "bn": "এই দাবিটি সম্পূর্ণ মিথ্যা (FALSE)। ইউনেস্কো কখনও 'জন গণ মন'-কে বিশ্বের সেরা জাতীয় সঙ্গীত হিসেবে ঘোষণা করে কোনো প্রতিযোগিতা আয়োজন করেনি।",
+        }
+    if "t20" in lower_p:
+        return {
+            "en": "This claim is fully SUPPORTED. On June 29, 2024, the Indian cricket team led by Rohit Sharma won the ICC Men's T20 World Cup 2024 by defeating South Africa by 7 runs in the final held at Kensington Oval in Barbados, as confirmed by official ICC records and international news media.",
+            "hi": "यह दावा पूरी तरह से सही (SUPPORTED) है। 29 जून 2024 को भारतीय क्रिकेट टीम ने ICC पुरुष T20 विश्व कप 2024 के फाइनल में दक्षिण अफ्रीका को 7 रनों से हराकर खिताब जीता, जैसा कि आधिकारिक ICC रिकॉर्ड और अंतरराष्ट्रीय मीडिया ने पुष्टि की है।",
+            "mr": "हा दावा पूर्णपणे खरा (SUPPORTED) आहे. 29 जून 2024 रोजी भारतीय क्रिकेट संघाने ICC पुरुष T20 World Cup 2024 च्या अंतिम सामन्यात दक्षिण आफ्रिकेला 7 धावांनी पराभूत करून विजेतेपद मिळवले.",
+            "ta": "இந்த கூற்று முற்றிலும் உண்மை (SUPPORTED). 29 ஜூன் 2024 அன்று இந்திய கிரிக்கெட் அணி ICC ஆண்கள் T20 உலகக் கோப்பை 2024 இறுதியில் தென்ன-Afrikaவை 7 ரன்கள் வித்தியாசத்தில் வென்றது.",
+            "bn": "এই দাবিটি সম্পূর্ণ সঠিক (SUPPORTED)। 29 জুন 2024-এ ভারতীয় ক্রিকেট দল ICC পুরুষ T20 বিশ্বকাপ 2024-এর ফাইনালে দক্ষিণ আফ্রিকাকে 7 রানে হারিয়ে শিরোপা জিতেছে।",
+        }
+    generic = {
+        "en": "The claim was reviewed against available credible sources.",
+        "hi": "उपलब्ध विश्वसनीय स्रोतों के आधार पर दावे की जांच की गई।",
+        "mr": "उपलब्ध विश्वासार्ह स्रोतांवर आधारित दाव्याची तपासणी केली.",
+        "ta": "கிடைக்கும் நம்பகமான ஆதாரங்களின் அடிப்படையில் கூற்று ஆய்வு செய்யப்பட்டது.",
+        "bn": "উপলব্ধ নির্ভরযোগ্য উৎসের ভিত্তিতে দাবিটি যাচাই করা হয়েছে।",
+    }
+    return generic
 
 
 async def extract_text_from_image(image_base64: str) -> dict:

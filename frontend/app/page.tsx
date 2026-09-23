@@ -31,6 +31,7 @@ export default function HomePage() {
   };
 
   const handleVerificationComplete = (data: VerificationResult) => {
+    console.log('[TruthLens] verification full response:', data);
     setPendingResult(data);
     setIsBackendComplete(true);
   };
@@ -112,6 +113,7 @@ export default function HomePage() {
       {result && !isLoading && (
         <div className="space-y-8 max-w-4xl mx-auto animate-slide-up">
           <VerdictCard
+            key={`${result.claim}-${result.verdict}`}
             claim={result.claim}
             verdict={result.verdict}
             confidence={result.confidence}

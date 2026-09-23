@@ -1,7 +1,8 @@
+import asyncio
 import json
 from typing import List, Dict
 from models import ExplanationOutput, MultiExplanationOutput, EvidenceItem, AgentExecutionError, AgentParsingError
-from llm import call_llm_json
+from llm import call_llm_json, _heuristic_all_explanations
 
 SYSTEM_PROMPT = """You are the Explanation Agent for TruthLens.
 Your job is to generate a short, simple, crystal-clear explanation (3-4 sentences) in the USER'S LANGUAGE (as specified by the ISO code).
@@ -61,8 +62,11 @@ async def generate_explanation(
             response_model=ExplanationOutput,
             agent_name="ExplanationAgent"
         )
+        lang_key = (language or "en").lower()
         if not result.explanations and result.explanation:
-            result.explanations = {language: result.explanation}
+            result.explanations = {lang_key: result.explanation}
+        elif result.explanations:
+            result.explanations = {k.lower(): v for k, v in result.explanations.items()}
         return result
     except (AgentParsingError, AgentExecutionError):
         raise
@@ -105,13 +109,43 @@ async def generate_all_explanations(
             response_model=MultiExplanationOutput,
             agent_name="ExplanationAgent"
         )
-        explanations_dict = multi_result.explanations or {}
-        
-        # Ensure all 5 keys exist; fill missing keys if any
-        fallback_text = explanations_dict.get(primary_language) or explanations_dict.get("en") or f"The claim '{claim}' has been verified as {verdict} with {confidence}% confidence."
-        for lang in supported_langs:
-            if lang not in explanations_dict or not explanations_dict[lang]:
-                explanations_dict[lang] = fallback_text
+        explanations_dict = {
+            k.lower(): v for k, v in (multi_result.explanations or {}).items() if v
+        }
+
+        missing_langs = [
+            lang for lang in supported_langs
+            if lang not in explanations_dict or not str(explanations_dict[lang]).strip()
+        ]
+        if missing_langs:
+            per_lang_results = await asyncio.gather(
+                *[
+                    generate_explanation(claim, verdict, confidence, lang, evidence)
+                    for lang in missing_langs
+                ],
+                return_exceptions=True,
+            )
+            for lang, result in zip(missing_langs, per_lang_results):
+                if isinstance(result, ExplanationOutput) and result.explanation:
+                    explanations_dict[lang] = result.explanation
+
+        fallback_text = (
+            explanations_dict.get("en")
+            or explanations_dict.get(primary_language)
+            or f"The claim '{claim}' has been verified as {verdict} with {confidence}% confidence."
+        )
+        still_missing = [
+            lang for lang in supported_langs
+            if lang not in explanations_dict or not str(explanations_dict[lang]).strip()
+        ]
+        if still_missing:
+            heuristic = _heuristic_all_explanations(prompt)
+            for lang in still_missing:
+                explanations_dict[lang] = (
+                    heuristic.get(lang)
+                    or explanations_dict.get("en")
+                    or fallback_text
+                )
 
         primary_exp = explanations_dict.get(primary_language) or explanations_dict.get("en") or fallback_text
 
@@ -121,19 +155,44 @@ async def generate_all_explanations(
             explanations=explanations_dict
         )
     except Exception as e:
-        print(f"[TruthLens WARNING] [ExplanationAgent] Multi-language generation failed ({str(e)}), falling back to single language.")
-        # Fall back to single language call
+        print(f"[TruthLens WARNING] [ExplanationAgent] Multi-language generation failed ({str(e)}), falling back to per-language calls.")
         try:
-            single_result = await generate_explanation(claim, verdict, confidence, primary_language, evidence)
-            fallback_exp = single_result.explanation
-            explanations_dict = {lang: fallback_exp for lang in supported_langs}
-            explanations_dict[primary_language] = fallback_exp
+            per_lang_results = await asyncio.gather(
+                *[
+                    generate_explanation(claim, verdict, confidence, lang, evidence)
+                    for lang in supported_langs
+                ],
+                return_exceptions=True,
+            )
+            explanations_dict: Dict[str, str] = {}
+            for lang, result in zip(supported_langs, per_lang_results):
+                if isinstance(result, ExplanationOutput) and result.explanation:
+                    explanations_dict[lang] = result.explanation
+                elif isinstance(result, Exception):
+                    print(f"[TruthLens WARNING] [ExplanationAgent] Failed for '{lang}': {result}")
+
+            if not explanations_dict:
+                raise AgentExecutionError(
+                    agent_name="ExplanationAgent",
+                    message="All per-language explanation calls failed",
+                )
+
+            for lang in supported_langs:
+                if lang not in explanations_dict:
+                    explanations_dict[lang] = (
+                        explanations_dict.get(primary_language)
+                        or explanations_dict.get("en")
+                        or next(iter(explanations_dict.values()))
+                    )
+
+            primary_exp = explanations_dict.get(primary_language) or explanations_dict.get("en") or next(iter(explanations_dict.values()))
             return ExplanationOutput(
-                explanation=fallback_exp,
+                explanation=primary_exp,
                 language=primary_language,
-                explanations=explanations_dict
+                explanations=explanations_dict,
             )
         except Exception as inner_e:
+            print(f"[TruthLens ERROR] [ExplanationAgent] Per-language fallback failed: {inner_e}")
             fallback_exp = f"The claim '{claim}' has been verified as {verdict} with {confidence}% confidence."
             explanations_dict = {lang: fallback_exp for lang in supported_langs}
             return ExplanationOutput(

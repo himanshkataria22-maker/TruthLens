@@ -21,7 +21,6 @@ interface VerdictCardProps {
   evidence?: EvidenceItem[];
   language?: string;
   onReset?: () => void;
-  onLanguageChange?: (newExplanation: string, newLang: string) => void;
 }
 
 function CircularConfidenceRing({ confidence, colorHex }: { confidence: number; colorHex: string }) {
@@ -84,18 +83,32 @@ export default function VerdictCard({
   evidence = [],
   language = "en",
   onReset,
-  onLanguageChange
 }: VerdictCardProps) {
   const [copied, setCopied] = useState(false);
-  const [currentLanguage, setCurrentLanguage] = useState(language);
-  const [isTranslating, setIsTranslating] = useState(false);
-  const [dynamicExplanations, setDynamicExplanations] = useState<Record<string, string>>(explanations || {});
+  const [selectedLanguage, setSelectedLanguage] = useState(
+    () => (language || 'en').toLowerCase()
+  );
+  const [storedExplanations, setStoredExplanations] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (explanations && Object.keys(explanations).length > 0) {
-      setDynamicExplanations(explanations);
+    const map: Record<string, string> = {};
+    for (const [code, text] of Object.entries(explanations || {})) {
+      if (text?.trim()) {
+        map[code.toLowerCase()] = text;
+      }
     }
-  }, [explanations]);
+    if (explanation?.trim()) {
+      const primaryLang = (language || 'en').toLowerCase();
+      if (!map[primaryLang]) {
+        map[primaryLang] = explanation;
+      }
+    }
+    setStoredExplanations(map);
+  }, [explanations, explanation, language, claim, verdict]);
+
+  useEffect(() => {
+    setSelectedLanguage((language || 'en').toLowerCase());
+  }, [language, claim, verdict]);
 
   const availableLanguages = [
     { code: "en", label: "English" },
@@ -105,48 +118,15 @@ export default function VerdictCard({
     { code: "bn", label: "বাংলা" },
   ];
 
-  const handleLanguageChange = async (newLang: string) => {
-    if (newLang === currentLanguage || isTranslating) return;
-    setCurrentLanguage(newLang);
-
-    if (dynamicExplanations[newLang]) {
-      if (onLanguageChange) {
-        onLanguageChange(dynamicExplanations[newLang], newLang);
-      }
-      return;
-    }
-
-    setIsTranslating(true);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    try {
-      const res = await fetch(`${apiUrl}/explain`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          claim,
-          verdict,
-          confidence,
-          evidence,
-          target_language: newLang
-        })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setDynamicExplanations(prev => ({ ...prev, [newLang]: data.explanation }));
-        if (onLanguageChange) {
-          onLanguageChange(data.explanation, newLang);
-        }
-      }
-    } catch (err) {
-      console.error("Fallback translation failed:", err);
-    } finally {
-      setIsTranslating(false);
-    }
+  const handleLanguageChange = (newLang: string) => {
+    if (newLang === selectedLanguage) return;
+    setSelectedLanguage(newLang);
   };
 
-  const displayedExplanation = isTranslating
-    ? "Translating explanation..."
-    : (dynamicExplanations[currentLanguage] || (currentLanguage === language ? explanation : (dynamicExplanations["en"] || explanation)));
+  const displayedExplanation =
+    storedExplanations[selectedLanguage] ??
+    storedExplanations.en ??
+    '';
 
   const normalizedVerdict = (verdict || "UNVERIFIABLE").toUpperCase();
 
@@ -289,7 +269,7 @@ export default function VerdictCard({
       <div className="p-4 sm:p-5 rounded-xl bg-white border border-slate-200 shadow-xs">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-heading text-xs sm:text-sm font-bold uppercase tracking-wider text-[#1C2740]">
-            Explanation ({getLanguageLabel(currentLanguage)})
+            Explanation ({getLanguageLabel(selectedLanguage)})
           </h3>
           <div className="flex items-center gap-1.5">
             <Languages className="w-4 h-4 text-slate-400" />
@@ -304,7 +284,7 @@ export default function VerdictCard({
               key={lang.code}
               onClick={() => handleLanguageChange(lang.code)}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer ${
-                currentLanguage === lang.code
+                selectedLanguage === lang.code
                   ? 'bg-[#22B8CF] text-white shadow-md shadow-[#22B8CF]/30 scale-105'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
               }`}

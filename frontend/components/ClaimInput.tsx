@@ -224,6 +224,7 @@ export default function ClaimInput({
               const event = JSON.parse(jsonStr);
               
               if (event.step === 'result') {
+                console.log('[TruthLens] /verify/stream full response:', event.data);
                 if (onVerificationComplete) {
                   onVerificationComplete(event.data);
                 }
@@ -266,6 +267,7 @@ export default function ClaimInput({
         }
 
         const data: VerificationResult = await res.json();
+        console.log('[TruthLens] /verify full response:', data);
         if (onVerificationComplete) {
           onVerificationComplete(data);
         }

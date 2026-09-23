@@ -53,6 +53,7 @@ function ResultContent() {
         }
 
         const data: VerificationResult = await res.json();
+        console.log('[TruthLens] /verify full response:', data);
         setResult(data);
         setIsLoading(false);
       } catch (err: any) {
@@ -102,6 +103,7 @@ function ResultContent() {
   return (
     <div className="space-y-8 max-w-4xl mx-auto py-4 animate-slide-up">
       <VerdictCard
+        key={`${result.claim}-${result.verdict}`}
         claim={result.claim}
         verdict={result.verdict}
         confidence={result.confidence}
