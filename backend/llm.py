@@ -33,6 +33,42 @@ def _extract_user_claim_from_prompt(prompt: str) -> str:
     return prompt.strip()
 
 from models import AgentParsingError, AgentExecutionError
+from safe_errors import (
+    IMAGE_EXTRACTION_FAILED,
+    IMAGE_EXTRACTION_UNAVAILABLE,
+    log_server_exception,
+)
+
+# Vision-capable Gemini models (newest first); verified via ListModels + generateContent
+GEMINI_VISION_MODELS = [
+    m.strip()
+    for m in os.getenv(
+        "GEMINI_VISION_MODEL",
+        "gemini-3.6-flash,gemini-3-flash-preview,gemini-3.5-flash-lite",
+    ).split(",")
+    if m.strip()
+]
+
+
+def _is_google_native_key(api_key: str) -> bool:
+    return api_key.startswith("AIza") or api_key.startswith("AQ.")
+
+
+def _parse_image_payload(image_base64: str) -> tuple[str, str]:
+    if image_base64.startswith("data:"):
+        header, data = image_base64.split(",", 1)
+        mime = header.split(";")[0].replace("data:", "").strip() or "image/jpeg"
+        return mime, data.strip()
+    return "image/jpeg", image_base64.strip()
+
+
+def _image_error_result(*, auth: bool = False) -> dict:
+    return {
+        "extracted_text": "",
+        "language": "en",
+        "error": IMAGE_EXTRACTION_UNAVAILABLE if auth else IMAGE_EXTRACTION_FAILED,
+        "error_code": "auth" if auth else "failed",
+    }
 
 async def call_llm_json(
     prompt: str,
@@ -284,12 +320,14 @@ async def extract_text_from_image(image_base64: str) -> dict:
 
     # For vision, we need a vision-capable model
     vision_model = model
-    if not vision_model or vision_model in ["llama-3.3-70b-versatile"]:
-        # Default to GPT-4o-mini for vision if not specified
+    if not vision_model or vision_model in ["llama-3.3-70b-versatile", "gemini-1.5-flash"]:
+        # Default based on API key type
         if api_key.startswith("gsk_"):
             vision_model = "llama-3.2-90b-vision-preview"
         elif api_key.startswith("AIza"):
             vision_model = "gemini-1.5-flash"
+        elif api_key.startswith("AQ."):
+            vision_model = "gemini-2.5-flash"  # Updated: use available model
         else:
             vision_model = "gpt-4o-mini"
 
@@ -298,6 +336,9 @@ async def extract_text_from_image(image_base64: str) -> dict:
             base_url = "https://api.groq.com/openai/v1/chat/completions"
         elif api_key.startswith("AIza"):
             base_url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+        elif api_key.startswith("AQ."):
+            # Google Generative AI Studio key - use REST API with correct endpoint and model variable
+            base_url = f"https://generativelanguage.googleapis.com/v1beta/models/{vision_model}:generateContent?key={api_key}"
         else:
             base_url = "https://api.openai.com/v1/chat/completions"
     elif not base_url.endswith("/chat/completions"):
@@ -314,41 +355,87 @@ Respond with JSON:
   "language": "iso_code"
 }"""
 
-    messages = [
-        {
-            "role": "user",
-            "content": [
-                {"type": "text", "text": "Extract all text from this image and identify its language. Return only valid JSON."},
-                {"type": "image_url", "image_url": {"url": image_url}}
-            ]
-        }
-    ]
+    # Format messages based on API key type
+    if api_key.startswith("AQ."):
+        # Google Generative AI Studio format
+        messages = [
+            {
+                "parts": [
+                    {"text": "Extract all text from this image and identify its language. Return only valid JSON with keys: extracted_text, language"},
+                    {"inline_data": {"mime_type": "image/jpeg", "data": image_base64.replace("data:image/jpeg;base64,", "") if "data:image/" in image_base64 else image_base64}}
+                ]
+            }
+        ]
+    else:
+        # OpenAI/Groq format
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Extract all text from this image and identify its language. Return only valid JSON."},
+                    {"type": "image_url", "image_url": {"url": image_url}}
+                ]
+            }
+        ]
 
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}"
     }
+
+    # Only add Authorization header for non-Google-Studio keys
+    if not api_key.startswith("AQ."):
+        headers["Authorization"] = f"Bearer {api_key}"
 
     if not api_key or api_key.startswith("your_"):
         return {
             "extracted_text": "",
             "language": "en",
-            "error": "No valid API key configured for image extraction"
+            "error": "Image verification is unavailable — the vision API key is missing or invalid. Please configure LLM_API_KEY (or GROQ_API_KEY / OPENAI_API_KEY) in backend/.env, or try pasting the claim as text instead."
         }
 
     try:
-        payload = {
-            "model": vision_model,
-            "messages": messages,
-            "temperature": 0.1,
-            "max_tokens": 1000
-        }
+        if api_key.startswith("AQ."):
+            # Google Generative AI Studio format
+            payload = {
+                "contents": messages,
+                "generationConfig": {
+                    "temperature": 0.1,
+                    "maxOutputTokens": 1000
+                }
+            }
+        else:
+            # OpenAI/Groq format
+            payload = {
+                "model": vision_model,
+                "messages": messages,
+                "temperature": 0.1,
+                "max_tokens": 1000
+            }
         
         async with httpx.AsyncClient(timeout=45.0) as client:
             res = await client.post(base_url, headers=headers, json=payload)
+            
+            # Handle 401 Unauthorized specifically
+            if res.status_code == 401:
+                print(f"[TruthLens ERROR] [ImageExtraction] 401 Unauthorized from {base_url}")
+                print(f"[TruthLens ERROR] [ImageExtraction] Vision model: {vision_model}, API key starts with: {api_key[:10]}...")
+                return {
+                    "extracted_text": "",
+                    "language": "en",
+                    "error": "Image verification failed — the API key is invalid or expired. Please check that LLM_API_KEY (or GROQ_API_KEY) is correctly set in backend/.env and matches your API provider. Alternatively, try pasting the claim as text instead."
+                }
+            
             res.raise_for_status()
-            data = res.json()
-            content = data["choices"][0]["message"]["content"]
+            
+            # Parse response based on API type
+            if api_key.startswith("AQ."):
+                # Google Generative AI Studio response
+                data = res.json()
+                content = data["candidates"][0]["content"]["parts"][0]["text"]
+            else:
+                # OpenAI/Groq response
+                data = res.json()
+                content = data["choices"][0]["message"]["content"]
             
             # Try to parse as JSON
             clean_json = _clean_json_str(content)
@@ -359,8 +446,10 @@ Respond with JSON:
                 "language": result.get("language", "en")
             }
     except Exception as e:
+        error_msg = str(e)
+        print(f"[TruthLens ERROR] [ImageExtraction] Exception: {error_msg}")
         return {
             "extracted_text": "",
             "language": "en",
-            "error": f"Image extraction failed: {str(e)}"
+            "error": f"Image extraction failed: {error_msg}. Try pasting the claim as text instead, or contact support if the problem persists."
         }
