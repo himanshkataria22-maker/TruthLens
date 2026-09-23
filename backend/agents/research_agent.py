@@ -30,15 +30,22 @@ async def _search_serpapi(query: str, api_key: str) -> List[RawSearchResult]:
         res = await client.get(url, params=params)
         res.raise_for_status()
         data = res.json()
+        
+        # SerpAPI DuckDuckGo returns results in 'organic_results' or 'results'
+        results_list = data.get("organic_results") or data.get("results") or []
         results = []
-        for item in data.get("organic_results", []):
-            u = item.get("link", "")
-            results.append(RawSearchResult(
-                title=item.get("title", ""),
-                url=u,
-                snippet=item.get("snippet", ""),
-                domain=_extract_domain(u)
-            ))
+        
+        for item in results_list[:5]:
+            u = item.get("link") or item.get("url") or ""
+            if u:  # Only add if URL exists
+                results.append(RawSearchResult(
+                    title=item.get("title", ""),
+                    url=u,
+                    snippet=item.get("snippet") or item.get("content") or "",
+                    domain=_extract_domain(u)
+                ))
+        
+        print(f"[TruthLens INFO] SerpAPI found {len(results)} results for query: {query[:50]}")
         return results
 
 async def _search_tavily(query: str, api_key: str) -> List[RawSearchResult]:
