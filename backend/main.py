@@ -16,11 +16,63 @@ import json
 import base64
 import os
 
+# Check and warn about missing API keys on startup
+def _check_api_keys_on_startup():
+    """Check for required API keys at startup and log warnings."""
+    llm_key = os.getenv("LLM_API_KEY", "").strip()
+    openai_key = os.getenv("OPENAI_API_KEY", "").strip()
+    groq_key = os.getenv("GROQ_API_KEY", "").strip()
+    search_key = os.getenv("SEARCH_API_KEY", "").strip()
+    
+    has_llm = llm_key and not llm_key.startswith("your_")
+    has_openai = openai_key and not openai_key.startswith("your_")
+    has_groq = groq_key and not groq_key.startswith("your_")
+    has_search = search_key and not search_key.startswith("your_")
+    
+    if not (has_llm or has_openai or has_groq):
+        print("\n" + "="*70)
+        print("[TruthLens WARNING] ⚠️  NO LLM API KEY CONFIGURED")
+        print("="*70)
+        print("The following features will FAIL until you configure an API key:")
+        print("  • Claim extraction from text")
+        print("  • Web research and source verification")
+        print("  • Explanation generation")
+        print("  • Image/screenshot OCR and text extraction")
+        print("\nTo fix this:")
+        print("1. Open: backend/.env")
+        print("2. Add ONE of:")
+        print("   - LLM_API_KEY=sk_your_openai_key (for OpenAI)")
+        print("   - LLM_API_KEY=gsk_your_groq_key (for Groq)")
+        print("   - LLM_API_KEY=AIza_your_gemini_key (for Google Gemini)")
+        print("   OR set GROQ_API_KEY, OPENAI_API_KEY individually")
+        print("3. Restart the backend server")
+        print("="*70 + "\n")
+    else:
+        provider = "Unknown"
+        if has_llm:
+            if llm_key.startswith("gsk_"):
+                provider = "Groq"
+            elif llm_key.startswith("AIza"):
+                provider = "Google Gemini"
+            else:
+                provider = "OpenAI"
+        elif has_groq:
+            provider = "Groq"
+        elif has_openai:
+            provider = "OpenAI"
+        print(f"[TruthLens INFO] ✓ LLM API Key configured ({provider} provider)")
+    
+    if not has_search:
+        print("[TruthLens WARNING] SEARCH_API_KEY not configured — web research will fail (optional)")
+
 app = FastAPI(
     title="TruthLens API",
     description="Multi-agent truth verification pipeline for regional languages and English",
     version="1.0.0"
 )
+
+# Check API keys on startup
+_check_api_keys_on_startup()
 
 app.add_middleware(
     CORSMiddleware,
@@ -144,16 +196,32 @@ async def verify_image(request: ImageVerifyRequest):
         
         if size_mb > 5:
             raise HTTPException(status_code=400, detail=f"Image too large ({size_mb:.1f}MB). Maximum size is 5MB.")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid image data: {str(e)}")
     
     result = await extract_text_from_image(request.image_data)
     
+    # Check if an error occurred
     if "error" in result:
-        raise HTTPException(status_code=500, detail=result["error"])
+        error_msg = result["error"]
+        print(f"[TruthLens] [/verify/image] Extraction error: {error_msg}")
+        
+        # 503 for API key issues, 400 for other issues
+        if "API key" in error_msg or "invalid" in error_msg.lower():
+            raise HTTPException(
+                status_code=503,
+                detail=f"Image verification temporarily unavailable: {error_msg}"
+            )
+        else:
+            raise HTTPException(status_code=400, detail=error_msg)
     
     if not result["extracted_text"]:
-        raise HTTPException(status_code=400, detail="Could not extract any readable text from the image. Please ensure the image contains clear, readable text.")
+        raise HTTPException(
+            status_code=400,
+            detail="Could not extract any readable text from the image. Please ensure the image contains clear, readable text, or try pasting the claim as text instead."
+        )
     
     return ImageExtractResponse(
         extracted_text=result["extracted_text"],
