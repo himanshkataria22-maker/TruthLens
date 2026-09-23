@@ -16,6 +16,7 @@ from agents.credibility_filter import filter_sources
 from agents.verification_agent import verify_claim
 from agents.explanation_agent import generate_explanation, generate_all_explanations
 from cache import get_cached_result, cache_result
+from url_validator import validate_evidence_urls
 
 AGENT_TIMEOUT = 20.0  # 20 seconds hard timeout per agent call
 PIPELINE_TIMEOUT = 45.0  # 45 seconds overall pipeline hard timeout
@@ -205,6 +206,9 @@ async def _run_pipeline_inner(text: str, target_language: Optional[str] = None) 
             stance=st,
             reason=rsn
         ))
+
+    # Validate all evidence URLs concurrently (removes 404s and unreachable sources)
+    evidence_items = await validate_evidence_urls(evidence_items)
 
     # Step 5: Explanation Generation
     try:
@@ -482,6 +486,9 @@ async def run_pipeline_streaming(text: str, target_language: Optional[str] = Non
             stance=st,
             reason=rsn
         ))
+
+    # Validate all evidence URLs concurrently (removes 404s and unreachable sources)
+    evidence_items = await validate_evidence_urls(evidence_items)
 
     # Check overall timeout (45s limit)
     if time.perf_counter() - overall_start_time > PIPELINE_TIMEOUT:
