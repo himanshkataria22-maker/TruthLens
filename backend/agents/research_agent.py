@@ -17,6 +17,30 @@ def _extract_domain(url: str) -> str:
     except Exception:
         return "unknown"
 
+async def _search_serpapi(query: str, api_key: str) -> List[RawSearchResult]:
+    """Search using SerpAPI with DuckDuckGo engine."""
+    url = "https://serpapi.com/search"
+    params = {
+        "api_key": api_key,
+        "q": query,
+        "engine": "duckduckgo",
+        "num": 5
+    }
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        res = await client.get(url, params=params)
+        res.raise_for_status()
+        data = res.json()
+        results = []
+        for item in data.get("organic_results", []):
+            u = item.get("link", "")
+            results.append(RawSearchResult(
+                title=item.get("title", ""),
+                url=u,
+                snippet=item.get("snippet", ""),
+                domain=_extract_domain(u)
+            ))
+        return results
+
 async def _search_tavily(query: str, api_key: str) -> List[RawSearchResult]:
     url = "https://api.tavily.com/search"
     payload = {
@@ -129,13 +153,20 @@ async def research_queries(queries: List[str]) -> List[RawSearchResult]:
         try:
             if search_api_key and not search_api_key.startswith("your_"):
                 try:
-                    if len(search_api_key) == 40 and not search_api_key.startswith("tvly"):
-                        query_results = await _search_serper(q, search_api_key)
-                    else:
-                        query_results = await _search_tavily(q, search_api_key)
-                except Exception as api_err:
-                    print(f"[TruthLens ERROR] [ResearchAgent] API search failed for query '{q}': {api_err}. Trying DuckDuckGo fallback.")
-                    query_results = await _search_duckduckgo_fallback(q)
+                    # Try SerpAPI first (supports multiple engines including DuckDuckGo)
+                    print(f"[TruthLens INFO] [ResearchAgent] Trying SerpAPI for query: {q[:50]}...")
+                    query_results = await _search_serpapi(q, search_api_key)
+                except Exception as serp_err:
+                    print(f"[TruthLens ERROR] [ResearchAgent] SerpAPI failed: {serp_err}. Trying Serper...")
+                    try:
+                        # Try Serper as backup
+                        if len(search_api_key) == 40 and not search_api_key.startswith("tvly"):
+                            query_results = await _search_serper(q, search_api_key)
+                        else:
+                            query_results = await _search_tavily(q, search_api_key)
+                    except Exception as api_err:
+                        print(f"[TruthLens ERROR] [ResearchAgent] API search failed: {api_err}. Trying DuckDuckGo fallback.")
+                        query_results = await _search_duckduckgo_fallback(q)
             else:
                 print(f"[TruthLens INFO] [ResearchAgent] No API key configured. Using DuckDuckGo fallback for query: {q}")
                 query_results = await _search_duckduckgo_fallback(q)
