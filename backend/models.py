@@ -1,4 +1,4 @@
-from typing import List, Optional, Literal
+from typing import List, Optional, Literal, Dict
 from pydantic import BaseModel, Field
 from datetime import datetime
 
@@ -55,6 +55,10 @@ class VerificationOutput(BaseModel):
 class ExplanationOutput(BaseModel):
     explanation: str
     language: str
+    explanations: Dict[str, str] = Field(default_factory=dict)
+
+class MultiExplanationOutput(BaseModel):
+    explanations: Dict[str, str] = Field(description="Dictionary mapping ISO language codes (en, hi, mr, ta, bn) to explanations")
 
 class EvidenceItem(BaseModel):
     title: str
@@ -92,5 +96,6 @@ class VerifyResponse(BaseModel):
     verdict: str
     confidence: int
     explanation: str
+    explanations: Dict[str, str] = Field(default_factory=dict)
     evidence: List[EvidenceItem] = []
     steps: List[StepLog] = []
