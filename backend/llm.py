@@ -33,11 +33,10 @@ def _extract_user_claim_from_prompt(prompt: str) -> str:
     return prompt.strip()
 
 from models import AgentParsingError, AgentExecutionError
-from safe_errors import (
-    IMAGE_EXTRACTION_FAILED,
-    IMAGE_EXTRACTION_UNAVAILABLE,
-    log_server_exception,
-)
+
+# Error message constants
+IMAGE_EXTRACTION_FAILED = "Image extraction failed — the image may be unreadable or contain no text. Try pasting the claim as text instead, or upload a clearer image."
+IMAGE_EXTRACTION_UNAVAILABLE = "Image verification is unavailable — the vision API key is missing or invalid. Please configure LLM_API_KEY (or GROQ_API_KEY / OPENAI_API_KEY) in backend/.env, or try pasting the claim as text instead."
 
 # Vision-capable Gemini models (newest first); verified via ListModels + generateContent
 GEMINI_VISION_MODELS = [
