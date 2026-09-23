@@ -102,17 +102,21 @@ export default function VerdictCard({
       const primaryLang = (language || 'en').toLowerCase();
       map[primaryLang] = explanation.trim();
     }
-    console.log('[TruthLens] explanations loaded:', {
-      keys: Object.keys(map),
+    console.log('[TruthLens] explanations loaded from API:', {
+      apiLanguage: language,
+      apiKeys: Object.keys(explanations || {}),
+      processedKeys: Object.keys(map),
+      enPreview: map.en?.slice(0, 40),
       hiPreview: map.hi?.slice(0, 40),
       mrPreview: map.mr?.slice(0, 40),
-      sameHiMr: map.hi && map.mr ? map.hi === map.mr : null,
     });
     setStoredExplanations(map);
   }, [explanations, explanation, language, claim, verdict]);
 
   useEffect(() => {
-    setSelectedLanguage((language || 'en').toLowerCase());
+    const primaryLang = (language || 'en').toLowerCase();
+    console.log('[TruthLens] Setting initial language to:', primaryLang);
+    setSelectedLanguage(primaryLang);
   }, [language, claim, verdict]);
 
   const availableLanguages = [
@@ -126,11 +130,25 @@ export default function VerdictCard({
   const handleLanguageChange = (newLang: string) => {
     const code = newLang.toLowerCase();
     if (code === selectedLanguage) return;
-    console.log('[TruthLens] language tab:', code, storedExplanations[code]?.slice(0, 50));
+    
+    // Verify the language exists in our stored explanations
+    if (!storedExplanations[code]) {
+      console.warn(`[TruthLens] Language ${code} not available. Available:`, Object.keys(storedExplanations));
+      // Fall back to English if requested language is missing
+      if (code !== 'en' && storedExplanations['en']) {
+        console.log('[TruthLens] Falling back to English');
+        setSelectedLanguage('en');
+        return;
+      }
+    }
+    
+    console.log('[TruthLens] language tab changed to:', code);
+    console.log('[TruthLens] available languages:', Object.keys(storedExplanations));
+    console.log('[TruthLens] text preview:', storedExplanations[code]?.slice(0, 60));
     setSelectedLanguage(code);
   };
 
-  const displayedExplanation = storedExplanations[selectedLanguage] ?? '';
+  const displayedExplanation = storedExplanations[selectedLanguage] || storedExplanations['en'] || '';
 
   const normalizedVerdict = (verdict || "UNVERIFIABLE").toUpperCase();
 
