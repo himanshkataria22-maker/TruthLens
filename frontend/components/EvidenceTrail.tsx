@@ -90,12 +90,9 @@ export default function EvidenceTrail({ evidence = [], steps = [] }: EvidenceTra
 
   return (
     <div
-      className="p-4 sm:p-7 animate-slide-up space-y-3 shadow-lg rounded-xl"
+      className="p-4 sm:p-7 animate-slide-up space-y-3 shadow-lg rounded-xl border border-slate-200"
       style={{
-        background: 'rgba(255, 255, 255, 0.06)',
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
-        border: '1px solid rgba(255, 255, 255, 0.12)',
+        background: '#FFFFFF',
       }}
     >
       {/* Accordion Toggle Header */}
@@ -110,20 +107,20 @@ export default function EvidenceTrail({ evidence = [], steps = [] }: EvidenceTra
             <Layers className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="font-heading text-base sm:text-lg font-bold text-white group-hover:text-[#22B8CF] transition-colors flex items-center gap-2">
+            <h3 className="font-heading text-base sm:text-lg font-bold text-slate-900 group-hover:text-[#22B8CF] transition-colors flex items-center gap-2">
               <span>Show Me Why</span>
-              <span className="text-[10px] sm:text-xs font-mono px-2 py-0.5 rounded-full bg-white/10 text-white/80 border border-white/20">
+              <span className="text-[10px] sm:text-xs font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                 {evidence.length} {evidence.length === 1 ? 'Source' : 'Sources'}
               </span>
             </h3>
-            <p className="text-[11px] sm:text-xs text-white/60">
+            <p className="text-[11px] sm:text-xs text-slate-600">
               Inspect verified sources, tier classification, and stance findings
             </p>
           </div>
         </div>
 
         {/* 180° Rotating Chevron */}
-        <div className={`w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-white/60 group-hover:bg-[#22B8CF] group-hover:text-white transition-all duration-300 shrink-0 ${isOpen ? 'bg-[#22B8CF] text-white' : ''}`}>
+        <div className={`w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-[#22B8CF] group-hover:text-white transition-all duration-300 shrink-0 ${isOpen ? 'bg-[#22B8CF] text-white' : ''}`}>
           <ChevronDown className={`w-4 h-4 transition-transform duration-300 ease-in-out ${isOpen ? 'rotate-180' : 'rotate-0'}`} />
         </div>
       </button>
@@ -135,19 +132,16 @@ export default function EvidenceTrail({ evidence = [], steps = [] }: EvidenceTra
         }`}
       >
         <div className="overflow-hidden space-y-4">
-          <div className="border-t border-white/15 pt-3 space-y-4">
+          <div className="border-t border-slate-200 pt-3 space-y-4">
             {/* Pipeline Timings */}
             {steps && steps.length > 0 && (
               <div
-                className="p-3 sm:p-4 rounded-xl"
+                className="p-3 sm:p-4 rounded-xl border border-slate-200"
                 style={{
-                  background: 'rgba(255, 255, 255, 0.06)',
-                  backdropFilter: 'blur(10px)',
-                  WebkitBackdropFilter: 'blur(10px)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  background: '#F5F7FB',
                 }}
               >
-                <span className="text-[11px] font-mono font-semibold text-white/70 uppercase tracking-wider block mb-2 flex items-center gap-1.5">
+                <span className="text-[11px] font-mono font-semibold text-slate-600 uppercase tracking-wider block mb-2 flex items-center gap-1.5">
                   <Cpu className="w-3.5 h-3.5 text-[#22B8CF]" />
                   Agent Pipeline Execution Times
                 </span>
@@ -155,14 +149,13 @@ export default function EvidenceTrail({ evidence = [], steps = [] }: EvidenceTra
                   {steps.map((step, idx) => (
                     <div
                       key={idx}
-                      className="rounded-lg p-1.5 sm:p-2 text-center"
+                      className="rounded-lg p-1.5 sm:p-2 text-center border border-slate-200"
                       style={{
-                        background: 'rgba(255, 255, 255, 0.08)',
-                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        background: '#FFFFFF',
                       }}
                     >
-                      <div className="text-[9px] sm:text-[10px] font-medium text-white/60 truncate">{formatStepName(step.name)}</div>
-                      <div className="font-mono text-xs font-bold text-white/90 mt-0.5">{step.duration_ms}ms</div>
+                      <div className="text-[9px] sm:text-[10px] font-medium text-slate-600 truncate">{formatStepName(step.name)}</div>
+                      <div className="font-mono text-xs font-bold text-slate-800 mt-0.5">{step.duration_ms}ms</div>
                     </div>
                   ))}
                 </div>
@@ -172,10 +165,9 @@ export default function EvidenceTrail({ evidence = [], steps = [] }: EvidenceTra
             {/* Sources List */}
             {evidence.length === 0 ? (
               <div
-                className="text-center py-5 text-white/70 text-xs sm:text-sm rounded-xl"
+                className="text-center py-5 text-slate-600 text-xs sm:text-sm rounded-xl border border-slate-200"
                 style={{
-                  background: 'rgba(255, 255, 255, 0.06)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  background: '#F5F7FB',
                 }}
               >
                 No specific external sources met the high-credibility threshold for this query.
@@ -190,12 +182,9 @@ export default function EvidenceTrail({ evidence = [], steps = [] }: EvidenceTra
                   return (
                     <div
                       key={idx}
-                      className="p-3.5 sm:p-4 rounded-xl hover:shadow-md transition-all duration-200 space-y-2.5"
+                      className="p-3.5 sm:p-4 rounded-xl border border-slate-200 hover:border-[#22B8CF] transition-all duration-200 space-y-2.5"
                       style={{
-                        background: 'rgba(255, 255, 255, 0.06)',
-                        backdropFilter: 'blur(10px)',
-                        WebkitBackdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        background: '#FFFFFF',
                       }}
                     >
                       <div className="flex flex-wrap items-center justify-between gap-1.5">
@@ -208,7 +197,7 @@ export default function EvidenceTrail({ evidence = [], steps = [] }: EvidenceTra
                               (e.target as HTMLElement).style.display = 'none';
                             }}
                           />
-                          <span className="font-mono text-xs font-bold text-white/90">
+                          <span className="font-mono text-xs font-bold text-slate-800">
                             {item.domain}
                           </span>
                           <span className={`text-[10px] px-1.5 py-0.5 rounded-md border ${tier.classes}`}>
@@ -229,15 +218,15 @@ export default function EvidenceTrail({ evidence = [], steps = [] }: EvidenceTra
                         href={item.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block text-xs sm:text-sm font-semibold text-white/90 hover:text-[#22B8CF] transition-colors flex items-start gap-1 group"
+                        className="block text-xs sm:text-sm font-semibold text-slate-800 hover:text-[#22B8CF] transition-colors flex items-start gap-1 group"
                       >
                         <span className="leading-snug">{item.title}</span>
-                        <ExternalLink className="w-3 h-3 mt-1 shrink-0 text-white/40 group-hover:text-[#22B8CF] transition-colors" />
+                        <ExternalLink className="w-3 h-3 mt-1 shrink-0 text-slate-400 group-hover:text-[#22B8CF] transition-colors" />
                       </a>
 
                       {item.reason && (
-                        <div className="text-[11px] sm:text-xs text-white/80 rounded-lg p-2.5 border border-white/10 leading-relaxed" style={{ background: 'rgba(255, 255, 255, 0.03)' }}>
-                          <span className="font-bold text-white/90 mr-1">Finding:</span>
+                        <div className="text-[11px] sm:text-xs text-slate-700 rounded-lg p-2.5 border border-slate-200 leading-relaxed" style={{ background: '#FAFBFC' }}>
+                          <span className="font-bold text-slate-800 mr-1">Finding:</span>
                           {item.reason}
                         </div>
                       )}

@@ -245,23 +245,20 @@ export default function VerdictCard({
 
   return (
     <div
-      className="p-4 sm:p-7 animate-slide-up space-y-5 shadow-xl rounded-2xl"
+      className="p-4 sm:p-7 animate-slide-up space-y-5 shadow-xl rounded-2xl border border-slate-200"
       style={{
-        background: 'rgba(255, 255, 255, 0.08)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        border: '1px solid rgba(255, 255, 255, 0.15)',
+        background: '#FFFFFF',
       }}
     >
       {/* 1. Verdict Banner Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/15">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-white/70 font-mono">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 font-mono">
               Verification Result
             </span>
-            <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-white/10 text-white/80 font-medium border border-white/20">
-              <Globe className="w-3 h-3 text-white/60" />
+            <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium border border-slate-200">
+              <Globe className="w-3 h-3 text-slate-500" />
               {getLanguageLabel(language)}
             </span>
           </div>
@@ -271,7 +268,7 @@ export default function VerdictCard({
               {vInfo.icon}
               <span>{vInfo.title}</span>
             </span>
-            <span className="text-xs sm:text-sm font-bold text-white/90">
+            <span className="text-xs sm:text-sm font-bold text-slate-700">
               {vInfo.label}
             </span>
           </div>
@@ -283,40 +280,34 @@ export default function VerdictCard({
 
       {/* 2. Quoted Claim Block */}
       <div
-        className="p-3.5 sm:p-4 rounded-xl relative"
+        className="p-3.5 sm:p-4 rounded-xl relative border border-slate-200"
         style={{
-          background: 'rgba(255, 255, 255, 0.06)',
-          backdropFilter: 'blur(10px)',
-          WebkitBackdropFilter: 'blur(10px)',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
+          background: '#F5F7FB',
         }}
       >
-        <Quote className="w-5 h-5 text-white/20 absolute top-3 right-3 pointer-events-none" />
-        <span className="text-[11px] font-semibold text-white/60 uppercase tracking-wider block mb-1 font-mono">
+        <Quote className="w-5 h-5 text-slate-300 absolute top-3 right-3 pointer-events-none" />
+        <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1 font-mono">
           Evaluated Claim Statement
         </span>
-        <p className="text-sm sm:text-base font-medium text-white/90 leading-relaxed italic pr-5">
+        <p className="text-sm sm:text-base font-medium text-slate-700 leading-relaxed italic pr-5">
           "{claim}"
         </p>
       </div>
 
       {/* 3. Explanation in User's Language */}
       <div
-        className="p-4 sm:p-5 rounded-xl"
+        className="p-4 sm:p-5 rounded-xl border border-slate-200"
         style={{
-          background: 'rgba(255, 255, 255, 0.06)',
-          backdropFilter: 'blur(10px)',
-          WebkitBackdropFilter: 'blur(10px)',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
+          background: '#FFFFFF',
         }}
       >
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-heading text-xs sm:text-sm font-bold uppercase tracking-wider text-white">
+          <h3 className="font-heading text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-800">
             Explanation ({getLanguageLabel(selectedLanguage)})
           </h3>
           <div className="flex items-center gap-1.5">
-            <Languages className="w-4 h-4 text-white/40" />
-            <span className="text-[10px] text-white/60 font-semibold uppercase">Language:</span>
+            <Languages className="w-4 h-4 text-slate-400" />
+            <span className="text-[10px] text-slate-600 font-semibold uppercase">Language:</span>
           </div>
         </div>
         
@@ -329,7 +320,7 @@ export default function VerdictCard({
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer ${
                 selectedLanguage === lang.code
                   ? 'bg-[#22B8CF] text-white shadow-md shadow-[#22B8CF]/30 scale-105'
-                  : 'bg-white/10 text-white/80 hover:bg-white/20 border border-white/20'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
               }`}
             >
               {lang.label}
@@ -337,17 +328,17 @@ export default function VerdictCard({
           ))}
         </div>
 
-        <p className="text-sm sm:text-base text-white/90 leading-relaxed font-normal">
+        <p className="text-sm sm:text-base text-slate-700 leading-relaxed font-normal">
           {displayedExplanation}
         </p>
       </div>
 
       {/* 4. Actions Row */}
-      <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 border-t border-white/15">
+      <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 border-t border-slate-200">
         {onReset && (
           <button
             onClick={onReset}
-            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs sm:text-sm font-semibold transition-colors cursor-pointer border border-white/20"
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs sm:text-sm font-semibold transition-colors cursor-pointer border border-slate-300"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Check Another Claim</span>
