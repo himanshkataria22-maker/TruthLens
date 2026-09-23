@@ -23,7 +23,7 @@ export default function AnimatedBackground() {
       fpsLimit: 60,
       particles: {
         number: {
-          value: 70,
+          value: 85,
           density: {
             enable: true,
             width: 1920,
@@ -31,45 +31,67 @@ export default function AnimatedBackground() {
           },
         },
         color: {
-          value: ['#FFFFFF', '#E1E6F0', '#C8D0DE'],
+          value: ['#00D9FF', '#00F0FF', '#7FE0FF', '#FFD700', '#FFA500', '#FF6B9D'],
         },
         shape: {
           type: 'circle',
         },
         opacity: {
-          value: { min: 0.45, max: 0.75 },
+          value: { min: 0.3, max: 0.9 },
           animation: {
-            enable: false,
+            enable: true,
+            speed: 1.5,
+            minimumValue: 0.1,
+            sync: false,
           },
         },
         size: {
-          value: { min: 2, max: 3.5 },
+          value: { min: 4, max: 12 },
           animation: {
-            enable: false,
+            enable: true,
+            speed: 2,
+            minimumValue: 2,
+            sync: false,
           },
         },
         shadow: {
           enable: true,
-          blur: 12,
+          blur: 15,
           color: {
-            value: '#FFFFFF',
+            value: '#00D9FF',
+          },
+          offset: {
+            x: 0,
+            y: 0,
           },
         },
         links: {
           enable: true,
-          distance: 140,
-          color: '#FFFFFF',
-          opacity: 0.18,
+          distance: 200,
+          color: '#00D9FF',
+          opacity: 0.08,
           width: 1,
+          frequency: 1,
+          duration: 3,
+          sleep: false,
+          triangles: {
+            enable: true,
+            frequency: 0.5,
+          },
         },
         move: {
           enable: true,
-          speed: 0.65,
+          speed: 1.2,
           direction: 'none',
           random: true,
           straight: false,
           outModes: {
             default: 'bounce',
+          },
+          attract: {
+            enable: true,
+            rotateX: 600,
+            rotateY: 1200,
           },
         },
       },
@@ -81,7 +103,8 @@ export default function AnimatedBackground() {
             mode: 'grab',
           },
           onClick: {
-            enable: false,
+            enable: true,
+            mode: 'repulse',
           },
           resize: {
             enable: true,
@@ -89,10 +112,14 @@ export default function AnimatedBackground() {
         },
         modes: {
           grab: {
-            distance: 160,
+            distance: 200,
             links: {
-              opacity: 0.3,
+              opacity: 0.5,
             },
+          },
+          repulse: {
+            distance: 150,
+            duration: 0.4,
           },
         },
       },
