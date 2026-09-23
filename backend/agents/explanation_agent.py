@@ -171,6 +171,7 @@ async def generate_all_explanations(
             for k, v in (multi_result.explanations or {}).items()
             if v and str(v).strip()
         }
+        print(f"[TruthLens] [ExplanationAgent] Multi-language call succeeded. Keys: {list(explanations_dict.keys())}")
     except Exception as e:
         print(f"[TruthLens WARNING] [ExplanationAgent] Multi-language call failed: {e}")
 
@@ -211,8 +212,18 @@ async def generate_all_explanations(
         or next(iter(explanations_dict.values()), f"The claim has been verified as {verdict}.")
     )
 
+    # Ensure all keys are lowercase and valid
+    final_explanations = {}
+    for lang in SUPPORTED_LANGS:
+        if lang in explanations_dict:
+            final_explanations[lang] = explanations_dict[lang]
+    
+    print(f"[TruthLens] [ExplanationAgent] Final explanations dict keys: {list(final_explanations.keys())}")
+    for lang in final_explanations:
+        print(f"[TruthLens] [ExplanationAgent] {lang}: {final_explanations[lang][:60]}...")
+
     return ExplanationOutput(
         explanation=primary_exp,
         language=primary_lang,
-        explanations={lang: explanations_dict[lang] for lang in SUPPORTED_LANGS if explanations_dict.get(lang)},
+        explanations=final_explanations,
     )
