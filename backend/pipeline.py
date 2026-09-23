@@ -14,7 +14,7 @@ from agents.claim_extractor import extract_claim
 from agents.research_agent import research_queries
 from agents.credibility_filter import filter_sources
 from agents.verification_agent import verify_claim
-from agents.explanation_agent import generate_explanation
+from agents.explanation_agent import generate_explanation, generate_all_explanations
 
 AGENT_TIMEOUT = 20.0  # 20 seconds hard timeout per agent call
 PIPELINE_TIMEOUT = 45.0  # 45 seconds overall pipeline hard timeout
@@ -200,11 +200,11 @@ async def _run_pipeline_inner(text: str, target_language: Optional[str] = None) 
         t0 = time.perf_counter()
         explanation_language = target_language if target_language else claim_data.language
         explanation_data: ExplanationOutput = await asyncio.wait_for(
-            generate_explanation(
+            generate_all_explanations(
                 claim=claim_data.claim,
                 verdict=verification_data.verdict,
                 confidence=verification_data.confidence,
-                language=explanation_language,
+                primary_language=explanation_language,
                 evidence=evidence_items
             ),
             timeout=AGENT_TIMEOUT
@@ -218,30 +218,35 @@ async def _run_pipeline_inner(text: str, target_language: Optional[str] = None) 
             verdict=verification_data.verdict,
             confidence=verification_data.confidence,
             explanation=explanation_data.explanation,
+            explanations=explanation_data.explanations,
             evidence=evidence_items,
             steps=steps
         )
     except asyncio.TimeoutError:
         print("[TruthLens ERROR] [explanation_generation] Agent timed out after 20s.")
         fallback_exp = f"The claim '{claim_data.claim}' has been verified as {verification_data.verdict} with {verification_data.confidence}% confidence."
+        fallback_dict = {lang: fallback_exp for lang in ["en", "hi", "mr", "ta", "bn"]}
         return VerifyResponse(
             claim=claim_data.claim,
             language=claim_data.language,
             verdict=verification_data.verdict,
             confidence=verification_data.confidence,
             explanation=fallback_exp,
+            explanations=fallback_dict,
             evidence=evidence_items,
             steps=steps
         )
     except Exception as e:
         print(f"[TruthLens ERROR] Pipeline early exit at stage 'explanation_generation': {str(e)}")
         fallback_exp = f"The claim '{claim_data.claim}' has been verified as {verification_data.verdict} with {verification_data.confidence}% confidence."
+        fallback_dict = {lang: fallback_exp for lang in ["en", "hi", "mr", "ta", "bn"]}
         return VerifyResponse(
             claim=claim_data.claim,
             language=claim_data.language,
             verdict=verification_data.verdict,
             confidence=verification_data.confidence,
             explanation=fallback_exp,
+            explanations=fallback_dict,
             evidence=evidence_items,
             steps=steps
         )
@@ -469,11 +474,11 @@ async def run_pipeline_streaming(text: str, target_language: Optional[str] = Non
         t0 = time.perf_counter()
         explanation_language = target_language if target_language else claim_data.language
         explanation_data: ExplanationOutput = await asyncio.wait_for(
-            generate_explanation(
+            generate_all_explanations(
                 claim=claim_data.claim,
                 verdict=verification_data.verdict,
                 confidence=verification_data.confidence,
-                language=explanation_language,
+                primary_language=explanation_language,
                 evidence=evidence_items
             ),
             timeout=AGENT_TIMEOUT
@@ -489,6 +494,7 @@ async def run_pipeline_streaming(text: str, target_language: Optional[str] = Non
             verdict=verification_data.verdict,
             confidence=verification_data.confidence,
             explanation=explanation_data.explanation,
+            explanations=explanation_data.explanations,
             evidence=evidence_items,
             steps=steps
         )
@@ -497,12 +503,14 @@ async def run_pipeline_streaming(text: str, target_language: Optional[str] = Non
     except asyncio.TimeoutError:
         print("[TruthLens ERROR] [explanation_generation] Agent timed out after 20s.")
         fallback_exp = f"The claim '{claim_data.claim}' has been verified as {verification_data.verdict} with {verification_data.confidence}% confidence."
+        fallback_dict = {lang: fallback_exp for lang in ["en", "hi", "mr", "ta", "bn"]}
         result = VerifyResponse(
             claim=claim_data.claim,
             language=claim_data.language,
             verdict=verification_data.verdict,
             confidence=verification_data.confidence,
             explanation=fallback_exp,
+            explanations=fallback_dict,
             evidence=evidence_items,
             steps=steps
         )
@@ -511,12 +519,14 @@ async def run_pipeline_streaming(text: str, target_language: Optional[str] = Non
     except Exception as e:
         print(f"[TruthLens ERROR] PipelineStream early exit at stage 'explanation_generation': {str(e)}")
         fallback_exp = f"The claim '{claim_data.claim}' has been verified as {verification_data.verdict} with {verification_data.confidence}% confidence."
+        fallback_dict = {lang: fallback_exp for lang in ["en", "hi", "mr", "ta", "bn"]}
         result = VerifyResponse(
             claim=claim_data.claim,
             language=claim_data.language,
             verdict=verification_data.verdict,
             confidence=verification_data.confidence,
             explanation=fallback_exp,
+            explanations=fallback_dict,
             evidence=evidence_items,
             steps=steps
         )
