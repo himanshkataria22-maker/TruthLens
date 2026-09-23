@@ -23,51 +23,53 @@ export default function AnimatedBackground() {
       fpsLimit: 60,
       particles: {
         number: {
-          value: 120,
+          value: 70,
           density: {
             enable: true,
             area: 800,
           },
         },
         color: {
-          value: ['#00D9FF', '#8B7CFF', '#FFB800'],
+          value: ['#FFFFFF', '#E1E6F0', '#C8D0DE'],
         },
         shape: {
           type: 'circle',
         },
         opacity: {
-          value: { min: 0.4, max: 0.9 },
+          value: { min: 0.3, max: 0.6 },
           animation: {
             enable: true,
-            speed: 1.2,
+            speed: 0.8,
+            minimumValue: 0.2,
             sync: false,
           },
         },
         size: {
-          value: { min: 1.5, max: 4 },
+          value: { min: 1, max: 2.5 },
           animation: {
             enable: true,
-            speed: 3,
+            speed: 1.5,
+            minimumValue: 0.5,
             sync: false,
           },
         },
         shadow: {
           enable: true,
-          blur: 15,
+          blur: 6,
           color: {
-            value: '#00D9FF',
+            value: '#FFFFFF',
           },
         },
         links: {
           enable: true,
           distance: 140,
-          color: '#00D9FF',
-          opacity: 0.45,
-          width: 1.2,
+          color: '#FFFFFF',
+          opacity: 0.18,
+          width: 1,
         },
         move: {
           enable: true,
-          speed: 1.3,
+          speed: 0.6,
           direction: 'none',
           random: true,
           straight: false,
@@ -92,13 +94,13 @@ export default function AnimatedBackground() {
         },
         modes: {
           grab: {
-            distance: 200,
+            distance: 180,
             links: {
-              opacity: 0.8,
+              opacity: 0.3,
             },
           },
           push: {
-            quantity: 3,
+            quantity: 2,
           },
         },
       },
@@ -109,7 +111,7 @@ export default function AnimatedBackground() {
 
   const particlesLoaded = async (container?: Container) => {
     if (container) {
-      console.log('[TruthLens Particles] Canvas Loaded Successfully:', {
+      console.log('[TruthLens Particles] Canvas Loaded (Minimal Style):', {
         count: container.particles.count,
         width: container.canvas.size.width,
         height: container.canvas.size.height,
