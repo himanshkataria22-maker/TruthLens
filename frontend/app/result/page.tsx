@@ -42,6 +42,12 @@ function ResultContent() {
 
         clearTimeout(timeoutId);
 
+        if (res.status === 429) {
+          setError("Please wait a few seconds before verifying another claim.");
+          setIsLoading(false);
+          return;
+        }
+
         if (!res.ok) {
           throw new Error(`Server returned error status ${res.status}`);
         }
@@ -51,7 +57,9 @@ function ResultContent() {
         setIsLoading(false);
       } catch (err: any) {
         let msg = "Could not connect to TruthLens verification server. Make sure the backend is running on port 8000.";
-        if (err.name === "AbortError") {
+        if (err.status === 429 || err.message === "429") {
+          msg = "Please wait a few seconds before verifying another claim.";
+        } else if (err.name === "AbortError") {
           msg = "Verification request timed out. The server took longer than 30 seconds to respond.";
         }
         setError(msg);
@@ -98,6 +106,7 @@ function ResultContent() {
         verdict={result.verdict}
         confidence={result.confidence}
         explanation={result.explanation}
+        explanations={result.explanations}
         evidence={result.evidence}
         language={result.language}
         onReset={() => router.push('/')}
