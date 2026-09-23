@@ -13,6 +13,7 @@ from agents.explanation_agent import generate_explanation
 from demo_cache import find_cached_claim, stream_cached_result
 from rate_limiter import rate_limiter, get_client_ip
 from validators import validate_claim_text
+from fallback_explanations import log_verdict_mismatch
 import json
 import base64
 import os
@@ -147,9 +148,13 @@ async def verify(request: VerifyRequest):
         # Demo mode but no cache hit
         raise HTTPException(status_code=404, detail="This claim is not in the demo cache. Add it using build_demo_cache.py or disable DEMO_MODE.")
     
-    # Run real pipeline
-    response = await run_pipeline(request.text, target_language=request.target_language)
-    return response
+    # Verify the result before returning
+    result = await run_pipeline(request.text, target_language=request.target_language)
+    
+    # Quality check: warn if explanation contradicts verdict
+    log_verdict_mismatch(result.verdict, result.explanation, request.text)
+    
+    return result
 
 @app.post("/verify/stream", tags=["Verification"])
 async def verify_stream(request: VerifyRequest):
