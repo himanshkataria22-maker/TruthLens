@@ -15,7 +15,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased min-h-screen flex flex-col justify-between bg-network-pattern">
+      <body className="antialiased min-h-screen flex flex-col justify-between">
         <PageParticleBackground />
         <div className="relative z-[1] flex flex-col min-h-screen flex-1 w-full">
         {/* Header */}

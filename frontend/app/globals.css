@@ -11,7 +11,7 @@ html, body {
   overflow-x: hidden;
 }
 
-/* Slate gradient + dot grid sit below particles (z-index: -1) and content (z-index: 1+) */
+/* Slate gradient background for the page */
 body::before {
   content: '';
   position: fixed;
@@ -24,20 +24,8 @@ body::before {
   pointer-events: none;
 }
 
-body.bg-network-pattern::before {
-  background-image:
-    radial-gradient(rgba(255, 255, 255, 0.15) 1.5px, transparent 1.5px),
-    linear-gradient(135deg, #5B6F9E 0%, #4C5E87 50%, #3F5079 100%);
-  background-size: 26px 26px, 100% 100%;
-}
-
 h1, h2, h3, .font-heading {
   font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
-}
-
-/* Faint decorative grid is applied via body.bg-network-pattern::before */
-.bg-network-pattern {
-  background: transparent;
 }
 
 /* Off-white Theme Cards */
