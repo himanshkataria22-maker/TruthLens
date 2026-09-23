@@ -101,70 +101,22 @@ async def _search_duckduckgo_fallback(query: str) -> List[RawSearchResult]:
     return results
 
 def _generate_grounded_fallback_sources(query: str) -> List[RawSearchResult]:
+    """
+    Generate fallback sources ONLY when web search fails.
+    These are intentionally minimal - they don't include specific URLs
+    because those can't be verified. We return empty list to force
+    the pipeline to handle "no sources found" gracefully instead of
+    showing broken 404 links.
+    """
     lq = query.lower()
-    if "500" in lq or "हरी पट्टी" in lq or "rbi" in lq or "नोट" in lq:
-        return [
-            RawSearchResult(
-                title="Reserve Bank of India - FAQs on Indian Banknotes and Security Features",
-                url="https://rbi.org.in/",
-                snippet="RBI provides official clarification on design features and security threads of Indian banknotes including ₹500 notes.",
-                domain="rbi.org.in"
-            ),
-            RawSearchResult(
-                title="BOOM Live - Fact Check articles on currency and viral claims",
-                url="https://www.boomlive.in/fact-check/",
-                snippet="BOOM provides verified fact-checks on viral WhatsApp messages and currency-related hoaxes.",
-                domain="boomlive.in"
-            ),
-            RawSearchResult(
-                title="The Hindu - Business and Economics News",
-                url="https://www.thehindu.com/business/",
-                snippet="The Hindu covers news on currency, banking, and economic policy including RBI clarifications.",
-                domain="thehindu.com"
-            )
-        ]
-    elif "unesco" in lq or "anthem" in lq or "gana" in lq:
-        return [
-            RawSearchResult(
-                title="Alt News - Fact Check Database",
-                url="https://www.altnews.in/",
-                snippet="Alt News provides detailed fact-checks debunking viral hoaxes including false UNESCO claims about national anthems.",
-                domain="altnews.in"
-            ),
-            RawSearchResult(
-                title="The Hindu - National News and Fact Checks",
-                url="https://www.thehindu.com/news/national/",
-                snippet="The Hindu publishes fact-checking articles on viral claims and misinformation.",
-                domain="thehindu.com"
-            ),
-            RawSearchResult(
-                title="BOOM Live - Viral Hoax Debunking",
-                url="https://www.boomlive.in/",
-                snippet="BOOM provides comprehensive fact-checks on false claims, hoaxes and misinformation.",
-                domain="boomlive.in"
-            )
-        ]
-    elif "t20" in lq or "cup" in lq or "india" in lq:
-        return [
-            RawSearchResult(
-                title="The Hindu - Cricket Sports Coverage",
-                url="https://www.thehindu.com/sport/cricket/",
-                snippet="The Hindu provides comprehensive coverage of international cricket including ICC tournaments and T20 World Cup.",
-                domain="thehindu.com"
-            ),
-            RawSearchResult(
-                title="The Indian Express - Sports News",
-                url="https://indianexpress.com/sports/",
-                snippet="Indian Express covers sports including cricket, ICC events, and T20 World Cup championships.",
-                domain="indianexpress.com"
-            ),
-            RawSearchResult(
-                title="BBC Sport - Cricket Coverage",
-                url="https://www.bbc.com/sport/cricket",
-                snippet="BBC Sport provides detailed coverage of international cricket and major tournaments like T20 World Cup.",
-                domain="bbc.com"
-            )
-        ]
+    
+    # Return empty - better to show "no sources" than broken 404 links
+    # Real web search APIs should be used whenever possible
+    print(f"[TruthLens INFO] No fallback sources generated for query: {lq}")
+    print("[TruthLens INFO] To avoid 404 errors, ensure a valid web search API is configured:")
+    print("  - SEARCH_API_KEY for Serper or Tavily")
+    print("  - Otherwise DuckDuckGo fallback will be used")
+    
     return []
 
 async def research_queries(queries: List[str]) -> List[RawSearchResult]:
@@ -182,13 +134,20 @@ async def research_queries(queries: List[str]) -> List[RawSearchResult]:
                     else:
                         query_results = await _search_tavily(q, search_api_key)
                 except Exception as api_err:
-                    print(f"[TruthLens ERROR] [ResearchAgent] API search failed for query '{q}': {api_err}. Trying fallback.")
+                    print(f"[TruthLens ERROR] [ResearchAgent] API search failed for query '{q}': {api_err}. Trying DuckDuckGo fallback.")
                     query_results = await _search_duckduckgo_fallback(q)
             else:
+                print(f"[TruthLens INFO] [ResearchAgent] No API key configured. Using DuckDuckGo fallback for query: {q}")
                 query_results = await _search_duckduckgo_fallback(q)
         except Exception as err:
             print(f"[TruthLens ERROR] [ResearchAgent] Exception while querying '{q}': {err}")
             query_results = _generate_grounded_fallback_sources(q)
+
+        # Log results
+        if query_results:
+            print(f"[TruthLens INFO] [ResearchAgent] Found {len(query_results)} sources for query: {q[:50]}...")
+        else:
+            print(f"[TruthLens WARNING] [ResearchAgent] No sources found for query: {q}")
 
         for res in query_results:
             normalized_url = res.url.split("#")[0].rstrip("/")
