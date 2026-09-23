@@ -1,11 +1,17 @@
-from fastapi import FastAPI, HTTPException
+import sys
+import io
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from models import HealthResponse, VerifyRequest, VerifyResponse, ImageVerifyRequest, ImageExtractResponse, ExplainRequest, ExplanationOutput
 from pipeline import run_pipeline, run_pipeline_streaming
 from llm import extract_text_from_image
 from agents.explanation_agent import generate_explanation
 from demo_cache import find_cached_claim, stream_cached_result
+from rate_limiter import rate_limiter, get_client_ip
 import json
 import base64
 import os
@@ -23,6 +29,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    """Rate limit verification requests per IP address."""
+    if request.method != "OPTIONS" and request.url.path in ["/verify", "/verify/stream"]:
+        ip = get_client_ip(request)
+        if not rate_limiter.is_allowed(ip):
+            return JSONResponse(
+                status_code=429,
+                content={
+                    "error": True,
+                    "message": "Too many requests. Please wait a moment and try again."
+                },
+                headers={"Access-Control-Allow-Origin": "*"}
+            )
+    return await call_next(request)
 
 @app.get("/", tags=["General"])
 async def root():
