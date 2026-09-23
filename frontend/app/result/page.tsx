@@ -54,8 +54,10 @@ function ResultContent() {
 
         const data: VerificationResult = await res.json();
         console.log('[TruthLens] /verify full response:', data);
+        console.log('[TruthLens] cached:', data.cached);
         setResult(data);
-        setIsLoading(false);
+        // If result is cached, skip loading animation by setting isLoading to false immediately
+        setIsLoading(!data.cached);
       } catch (err: any) {
         let msg = "Could not connect to TruthLens verification server. Make sure the backend is running on port 8000.";
         if (err.status === 429 || err.message === "429") {
@@ -102,6 +104,13 @@ function ResultContent() {
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto py-4 animate-slide-up">
+      {result.cached && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2 text-sm text-amber-800">
+          <span className="text-lg">⚡</span>
+          <span className="font-medium">Instant result — previously verified</span>
+        </div>
+      )}
+      
       <VerdictCard
         key={`${result.claim}-${result.verdict}`}
         claim={result.claim}

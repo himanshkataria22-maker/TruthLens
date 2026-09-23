@@ -99,3 +99,4 @@ class VerifyResponse(BaseModel):
     explanations: Dict[str, str] = Field(default_factory=dict)
     evidence: List[EvidenceItem] = []
     steps: List[StepLog] = []
+    cached: bool = Field(default=False, description="True if this result was retrieved from cache")

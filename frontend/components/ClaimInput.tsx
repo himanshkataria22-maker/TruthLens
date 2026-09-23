@@ -26,6 +26,7 @@ export interface VerificationResult {
   explanations?: Record<string, string>;
   evidence: EvidenceItem[];
   steps: StepLog[];
+  cached?: boolean;
 }
 
 interface ClaimInputProps {

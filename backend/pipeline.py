@@ -15,6 +15,7 @@ from agents.research_agent import research_queries
 from agents.credibility_filter import filter_sources
 from agents.verification_agent import verify_claim
 from agents.explanation_agent import generate_explanation, generate_all_explanations
+from cache import get_cached_result, cache_result
 
 AGENT_TIMEOUT = 20.0  # 20 seconds hard timeout per agent call
 PIPELINE_TIMEOUT = 45.0  # 45 seconds overall pipeline hard timeout
@@ -31,11 +32,21 @@ async def run_pipeline(text: str, target_language: Optional[str] = None) -> Veri
             steps=[]
         )
 
+    # Check cache first
+    cached_result = get_cached_result(text, target_language)
+    if cached_result:
+        # Mark as cached and return immediately
+        cached_result.cached = True
+        return cached_result
+
     try:
-        return await asyncio.wait_for(
+        result = await asyncio.wait_for(
             _run_pipeline_inner(text, target_language),
             timeout=PIPELINE_TIMEOUT
         )
+        # Store in cache after successful run
+        cache_result(text, result, target_language)
+        return result
     except asyncio.TimeoutError:
         print("[TruthLens ERROR] [Pipeline] Overall pipeline timed out after 45 seconds.")
         return VerifyResponse(
@@ -272,6 +283,15 @@ async def run_pipeline_streaming(text: str, target_language: Optional[str] = Non
         yield {"step": "result", "data": result.model_dump()}
         return
 
+    # Check cache first
+    cached_result = get_cached_result(text, target_language)
+    if cached_result:
+        # Mark as cached and yield immediately without running full pipeline
+        cached_result.cached = True
+        print("[TruthLens] Returning cached result, skipping full pipeline.")
+        yield {"step": "result", "data": cached_result.model_dump(), "cached": True}
+        return
+
     steps: List[StepLog] = []
     overall_start_time = time.perf_counter()
 
@@ -498,6 +518,8 @@ async def run_pipeline_streaming(text: str, target_language: Optional[str] = Non
             evidence=evidence_items,
             steps=steps
         )
+        # Cache the result
+        cache_result(text, result, target_language)
         yield {"step": "result", "data": result.model_dump()}
 
     except asyncio.TimeoutError:
