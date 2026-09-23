@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CheckCircle2, XCircle, AlertTriangle, HelpCircle, Copy, Check, Quote, Globe, ArrowLeft, Languages, Share2 } from 'lucide-react';
 
 interface EvidenceItem {
@@ -17,6 +17,7 @@ interface VerdictCardProps {
   verdict: string;
   confidence: number;
   explanation: string;
+  explanations?: Record<string, string>;
   evidence?: EvidenceItem[];
   language?: string;
   onReset?: () => void;
@@ -79,15 +80,22 @@ export default function VerdictCard({
   verdict,
   confidence,
   explanation,
+  explanations = {},
   evidence = [],
   language = "en",
   onReset,
   onLanguageChange
 }: VerdictCardProps) {
   const [copied, setCopied] = useState(false);
-  const [isChangingLanguage, setIsChangingLanguage] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState(language);
-  const [currentExplanation, setCurrentExplanation] = useState(explanation);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [dynamicExplanations, setDynamicExplanations] = useState<Record<string, string>>(explanations || {});
+
+  useEffect(() => {
+    if (explanations && Object.keys(explanations).length > 0) {
+      setDynamicExplanations(explanations);
+    }
+  }, [explanations]);
 
   const availableLanguages = [
     { code: "en", label: "English" },
@@ -98,11 +106,18 @@ export default function VerdictCard({
   ];
 
   const handleLanguageChange = async (newLang: string) => {
-    if (newLang === currentLanguage || isChangingLanguage) return;
+    if (newLang === currentLanguage || isTranslating) return;
+    setCurrentLanguage(newLang);
 
-    setIsChangingLanguage(true);
+    if (dynamicExplanations[newLang]) {
+      if (onLanguageChange) {
+        onLanguageChange(dynamicExplanations[newLang], newLang);
+      }
+      return;
+    }
+
+    setIsTranslating(true);
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
     try {
       const res = await fetch(`${apiUrl}/explain`, {
         method: "POST",
@@ -115,24 +130,23 @@ export default function VerdictCard({
           target_language: newLang
         })
       });
-
-      if (!res.ok) {
-        throw new Error("Failed to regenerate explanation");
-      }
-
-      const data = await res.json();
-      setCurrentExplanation(data.explanation);
-      setCurrentLanguage(newLang);
-      
-      if (onLanguageChange) {
-        onLanguageChange(data.explanation, newLang);
+      if (res.ok) {
+        const data = await res.json();
+        setDynamicExplanations(prev => ({ ...prev, [newLang]: data.explanation }));
+        if (onLanguageChange) {
+          onLanguageChange(data.explanation, newLang);
+        }
       }
     } catch (err) {
-      console.error("Language change failed:", err);
+      console.error("Fallback translation failed:", err);
     } finally {
-      setIsChangingLanguage(false);
+      setIsTranslating(false);
     }
   };
+
+  const displayedExplanation = isTranslating
+    ? "Translating explanation..."
+    : (dynamicExplanations[currentLanguage] || (currentLanguage === language ? explanation : (dynamicExplanations["en"] || explanation)));
 
   const normalizedVerdict = (verdict || "UNVERIFIABLE").toUpperCase();
 
@@ -192,7 +206,7 @@ export default function VerdictCard({
     const emoji = getVerdictEmoji();
     const topSource = evidence?.[0]?.url ? `\nTop Source: ${evidence[0].url}` : '';
     const shortClaim = claim.length > 100 ? claim.substring(0, 100) + "..." : claim;
-    const reason = currentExplanation.length > 150 ? currentExplanation.substring(0, 150) + "..." : currentExplanation;
+    const reason = displayedExplanation.length > 150 ? displayedExplanation.substring(0, 150) + "..." : displayedExplanation;
     
     const textToCopy = `${emoji} TruthLens Fact-Check\nVerdict: ${normalizedVerdict}\n\nClaim: "${shortClaim}"\n\nReason: ${reason}${topSource}\n\nVerified with TruthLens`;
     navigator.clipboard.writeText(textToCopy);
@@ -204,7 +218,7 @@ export default function VerdictCard({
     const emoji = getVerdictEmoji();
     const topSource = evidence?.[0]?.url ? `\n${evidence[0].url}` : '';
     const shortClaim = claim.length > 80 ? claim.substring(0, 80) + "..." : claim;
-    const reason = currentExplanation.split('.')[0] + '.';
+    const reason = displayedExplanation.split('.')[0] + '.';
     
     const summary = `${emoji} ${normalizedVerdict}\n\n"${shortClaim}"\n\n${reason}${topSource}\n\n✓ Verified with TruthLens`;
     const encoded = encodeURIComponent(summary);
@@ -289,12 +303,11 @@ export default function VerdictCard({
             <button
               key={lang.code}
               onClick={() => handleLanguageChange(lang.code)}
-              disabled={isChangingLanguage}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 cursor-pointer ${
                 currentLanguage === lang.code
-                  ? 'bg-[#22B8CF] text-white shadow-sm'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              } ${isChangingLanguage ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  ? 'bg-[#22B8CF] text-white shadow-md shadow-[#22B8CF]/30 scale-105'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
+              }`}
             >
               {lang.label}
             </button>
@@ -302,7 +315,7 @@ export default function VerdictCard({
         </div>
 
         <p className="text-sm sm:text-base text-[#1C2740] leading-relaxed font-normal">
-          {isChangingLanguage ? "Translating explanation..." : currentExplanation}
+          {displayedExplanation}
         </p>
       </div>
 
