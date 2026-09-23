@@ -46,11 +46,11 @@ export default function AnimatedBackground() {
           },
         },
         size: {
-          value: { min: 4, max: 12 },
+          value: { min: 3, max: 9 },
           animation: {
             enable: true,
             speed: 2,
-            minimumValue: 2,
+            minimumValue: 1.5,
             sync: false,
           },
         },
