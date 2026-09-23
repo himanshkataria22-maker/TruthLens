@@ -129,7 +129,10 @@ async def _run_pipeline_inner(text: str, target_language: Optional[str] = None) 
     # Step 3: Credibility Filtering
     try:
         t0 = time.perf_counter()
-        credible_sources: List[CredibleSource] = filter_sources(raw_sources)
+        credible_sources: List[CredibleSource] = filter_sources(
+            raw_sources, 
+            claim_type=getattr(claim_data, 'claim_type', 'general')
+        )
         t1 = time.perf_counter()
         steps.append(StepLog(name="credibility_filtering", duration_ms=int((t1 - t0) * 1000)))
     except Exception as e:

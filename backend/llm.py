@@ -209,10 +209,25 @@ def _generate_heuristic_fallback(prompt: str, response_model: Type[T]) -> T:
                 "ICC Men T20 World Cup 2024 final India South Africa"
             ]
 
+        # Detect claim type heuristically
+        claim_type = "general"
+        lower_claim = clean_claim.lower()
+        if any(word in lower_claim for word in ["battle", "war", "king", "emperor", "dynasty", "century", "ancient", "1556", "1526", "panipat", "akbar", "hemu"]):
+            claim_type = "historical"
+        elif any(word in lower_claim for word in ["disease", "vaccine", "medicine", "health", "virus", "symptom"]):
+            claim_type = "health"
+        elif any(word in lower_claim for word in ["science", "physics", "gravity", "atom", "element", "newton"]):
+            claim_type = "scientific"
+        elif any(word in lower_claim for word in ["stock", "inflation", "price", "economy", "rupee", "dollar"]):
+            claim_type = "financial"
+        elif any(word in lower_claim for word in ["win", "2024", "today", "yesterday", "breaking", "minister", "parliament"]):
+            claim_type = "current"
+
         return response_model(
             language=lang,
             claim=clean_claim,
-            queries=queries
+            queries=queries,
+            claim_type=claim_type
         )
 
     elif name == "VerificationOutput":
@@ -288,11 +303,11 @@ def _heuristic_all_explanations(prompt: str) -> dict:
             "bn": "এই দাবিটি সম্পূর্ণ সঠিক (SUPPORTED)। 29 জুন 2024-এ ভারতীয় ক্রিকেট দল ICC পুরুষ T20 বিশ্বকাপ 2024-এর ফাইনালে দক্ষিণ আফ্রিকাকে 7 রানে হারিয়ে শিরোপা জিতেছে।",
         }
     generic = {
-        "en": "The claim was reviewed against available credible sources.",
-        "hi": "उपलब्ध विश्वसनीय स्रोतों के आधार पर दावे की जांच की गई।",
-        "mr": "उपलब्ध विश्वासार्ह स्रोतांवर आधारित दाव्याची तपासणी केली.",
-        "ta": "கிடைக்கும் நம்பகமான ஆதாரங்களின் அடிப்படையில் கூற்று ஆய்வு செய்யப்பட்டது.",
-        "bn": "উপলব্ধ নির্ভরযোগ্য উৎসের ভিত্তিতে দাবিটি যাচাই করা হয়েছে।",
+        "en": "This claim could not be verified with sufficient credible sources. The available evidence was either contradictory, limited, or from lower-confidence sources. Please consult authoritative references for more information.",
+        "hi": "इस दावे को पर्याप्त विश्वसनीय स्रोतों से सत्यापित नहीं किया जा सका। उपलब्ध साक्ष्य विरोधाभासी, सीमित थे, या निम्न-विश्वास स्रोतों से थे।",
+        "mr": "या दाव्याची पर्याप्त विश्वासार्ह स्रोतांसह पडताळणी केली जाऊ शकली नाही. उपलब्ध पुरावे विरोधाभासी, मर्यादित होते किंवा कमी-आत्मविश्वास स्रोतांकडून होते.",
+        "ta": "இந்தக் கூற்றை போதுமான நம்பகமான மூலங்களால் சரிபார்க்க முடியவில்லை. கிடைக்கும் ஆதாரங்கள் முரண்பட்ட, வரையறுக்கப்பட்ட அல்லது குறைந்த நம்பிக்கை மூலங்களிலிருந்து வந்தன.",
+        "bn": "এই দাবিটি পর্যাপ্ত নির্ভরযোগ্য উৎস দ্বারা যাচাই করা যায়নি। উপলব্ধ প্রমাণগুলি পরস্পরবিরোধী, সীমিত বা নিম্ন-আস্থার উৎস থেকে ছিল।",
     }
     return generic
 

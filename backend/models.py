@@ -27,6 +27,7 @@ class ClaimExtractorOutput(BaseModel):
     language: str = Field(description="ISO language code, e.g. hi, en, mr, ta, te, bn")
     claim: str = Field(description="Single core verifiable factual claim")
     queries: List[str] = Field(description="3 search queries: user language, English, neutral keyword")
+    claim_type: str = Field(default="general", description="Type of claim: historical, scientific, current, financial, health, or general")
 
 class RawSearchResult(BaseModel):
     title: str

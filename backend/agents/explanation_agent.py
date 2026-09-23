@@ -191,19 +191,24 @@ async def generate_all_explanations(
             if parallel.get(lang):
                 explanations_dict[lang] = parallel[lang]
 
-    # Step 4: Heuristic fill only for langs still missing/duplicated — never copy another lang's text
+    # Step 4: Fill any remaining missing langs with heuristic
     still_need = _langs_needing_regeneration(explanations_dict)
     if still_need:
+        print(f"[TruthLens WARNING] [ExplanationAgent] Still missing langs after all attempts: {still_need}. Using heuristic fill.")
         heuristic = _heuristic_all_explanations(prompt)
         for lang in still_need:
             if heuristic.get(lang):
                 explanations_dict[lang] = heuristic[lang]
+                print(f"[TruthLens WARNING] [ExplanationAgent] Filled {lang} with heuristic fallback")
 
     # Final dedupe pass with heuristics for any remaining duplicates
-    for lang in _langs_needing_regeneration(explanations_dict):
-        heuristic = _heuristic_all_explanations(prompt)
-        if heuristic.get(lang):
-            explanations_dict[lang] = heuristic[lang]
+    final_need = _langs_needing_regeneration(explanations_dict)
+    if final_need:
+        print(f"[TruthLens WARNING] [ExplanationAgent] Final dedup needed for: {final_need}")
+        for lang in final_need:
+            heuristic = _heuristic_all_explanations(prompt)
+            if heuristic.get(lang):
+                explanations_dict[lang] = heuristic[lang]
 
     primary_lang = (primary_language or "en").lower()
     primary_exp = (
