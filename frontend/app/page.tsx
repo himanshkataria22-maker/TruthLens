@@ -116,6 +116,7 @@ export default function HomePage() {
             verdict={result.verdict}
             confidence={result.confidence}
             explanation={result.explanation}
+            explanations={result.explanations}
             evidence={result.evidence}
             language={result.language}
             onReset={handleReset}
