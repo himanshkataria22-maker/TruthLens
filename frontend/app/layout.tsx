@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ShieldCheck } from "lucide-react";
+import PageParticleBackground from "@/components/PageParticleBackground";
 
 export const metadata: Metadata = {
   title: "TruthLens - Verify Before You Share",
@@ -15,6 +16,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased min-h-screen flex flex-col justify-between bg-network-pattern">
+        <PageParticleBackground />
+        <div className="relative z-[1] flex flex-col min-h-screen flex-1 w-full">
         {/* Header */}
         <header className="sticky top-0 z-50 bg-[#3F5079]/85 backdrop-blur-md border-b border-white/15">
           <div className="max-w-4xl mx-auto px-3 sm:px-6 py-3.5 flex items-center justify-between">
@@ -57,6 +60,7 @@ export default function RootLayout({
             </p>
           </div>
         </footer>
+        </div>
       </body>
     </html>
   );

@@ -5,22 +5,39 @@
 @tailwind utilities;
 
 html, body {
-  background: linear-gradient(135deg, #5B6F9E 0%, #4C5E87 50%, #3F5079 100%) !important;
-  background-attachment: fixed !important;
   min-height: 100vh;
   color: #1C2740;
   font-family: 'Inter', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, sans-serif;
   overflow-x: hidden;
 }
 
+/* Slate gradient + dot grid sit below particles (z-index: -1) and content (z-index: 1+) */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #5B6F9E 0%, #4C5E87 50%, #3F5079 100%);
+  background-attachment: fixed;
+  pointer-events: none;
+}
+
+body.bg-network-pattern::before {
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.15) 1.5px, transparent 1.5px),
+    linear-gradient(135deg, #5B6F9E 0%, #4C5E87 50%, #3F5079 100%);
+  background-size: 26px 26px, 100% 100%;
+}
+
 h1, h2, h3, .font-heading {
   font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* Faint Decorative Network / Node Grid Pattern */
+/* Faint decorative grid is applied via body.bg-network-pattern::before */
 .bg-network-pattern {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.15) 1.5px, transparent 1.5px);
-  background-size: 26px 26px;
+  background: transparent;
 }
 
 /* Off-white Theme Cards */
@@ -29,6 +46,16 @@ h1, h2, h3, .font-heading {
   border-radius: 16px;
   box-shadow: 0 12px 30px -6px rgba(15, 23, 42, 0.25), 0 4px 12px -2px rgba(15, 23, 42, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+/* Glassmorphic input card on homepage */
+.glass-input-card {
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 8px 32px -4px rgba(15, 23, 42, 0.2);
 }
 
 /* Motion Accessibility */

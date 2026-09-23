@@ -1,12 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import dynamic from 'next/dynamic';
 import { ArrowRight, RefreshCw, Sparkles, Image as ImageIcon, X, Upload, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
-
-const AnimatedBackground = dynamic(() => import('./AnimatedBackground'), {
-  ssr: false,
-});
 
 interface EvidenceItem {
   title: string;
@@ -288,11 +283,7 @@ export default function ClaimInput({
   return (
     <div className="w-full space-y-5">
       {/* Hero Section */}
-      <div className="relative w-full min-h-[160px] text-center py-4 px-4 overflow-hidden rounded-2xl flex flex-col justify-center items-center" style={{ position: 'relative' }}>
-        {/* Live Animated Canvas Background */}
-        <AnimatedBackground />
-
-        {/* Hero Content */}
+      <div className="relative w-full min-h-[160px] text-center py-4 px-4 overflow-hidden rounded-2xl flex flex-col justify-center items-center">
         <div className="relative z-10 space-y-2.5 max-w-2xl mx-auto">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/20 border border-white/30 text-white shadow-xs backdrop-blur-xs">
             <Sparkles className="w-3.5 h-3.5 text-[#22B8CF]" />
@@ -310,12 +301,12 @@ export default function ClaimInput({
       </div>
 
       {/* Input Card */}
-      <form onSubmit={handleSubmit} className="theme-card p-4 sm:p-7 space-y-4">
+      <form onSubmit={handleSubmit} className="glass-input-card p-4 sm:p-7 space-y-4">
         <div className="flex items-center justify-between">
-          <label htmlFor="claim-textarea" className="text-xs font-mono font-bold uppercase tracking-wider text-[#1C2740]">
+          <label htmlFor="claim-textarea" className="text-xs font-mono font-bold uppercase tracking-wider text-[#EAF0FA]">
             Paste WhatsApp Forward or Claim
           </label>
-          <span className={`text-[11px] sm:text-xs font-mono font-semibold ${charCount > 1000 ? 'text-amber-600' : 'text-slate-500'}`}>
+          <span className={`text-[11px] sm:text-xs font-mono font-semibold ${charCount > 1000 ? 'text-amber-300' : 'text-slate-300'}`}>
             {charCount} characters
           </span>
         </div>
@@ -354,7 +345,7 @@ export default function ClaimInput({
             onChange={(e) => setText(e.target.value)}
             disabled={isLoading || isExtractingImage}
             placeholder="Paste a WhatsApp forward or any claim (Hindi, English, or any Indian language)... Or drag & drop an image here."
-            className="w-full bg-white border border-slate-300 rounded-xl p-3.5 sm:p-4 text-[#1C2740] placeholder-slate-400 text-sm sm:text-base focus:outline-none focus:border-[#22B8CF] focus:ring-2 focus:ring-[#22B8CF]/25 transition-all duration-200 resize-y leading-relaxed font-sans"
+            className="w-full rounded-xl p-3.5 sm:p-4 text-[#1C2740] placeholder-slate-500 text-sm sm:text-base focus:outline-none focus:border-[#22B8CF] focus:ring-2 focus:ring-[#22B8CF]/25 transition-all duration-200 resize-y leading-relaxed font-sans border border-white/30 bg-[rgba(255,255,255,0.85)] backdrop-blur-sm"
           />
         </div>
 
@@ -370,7 +361,7 @@ export default function ClaimInput({
             />
             <label
               htmlFor="image-upload"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition-colors cursor-pointer border border-slate-300"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-[#EAF0FA] font-semibold text-sm transition-colors cursor-pointer border border-white/30 backdrop-blur-sm"
             >
               <Upload className="w-4 h-4" />
               <span className="hidden sm:inline">Upload Screenshot</span>

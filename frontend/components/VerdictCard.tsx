@@ -94,15 +94,20 @@ export default function VerdictCard({
     const map: Record<string, string> = {};
     for (const [code, text] of Object.entries(explanations || {})) {
       if (text?.trim()) {
-        map[code.toLowerCase()] = text;
+        map[code.toLowerCase()] = text.trim();
       }
     }
-    if (explanation?.trim()) {
+    // Only use top-level `explanation` when the map is completely empty
+    if (!Object.keys(map).length && explanation?.trim()) {
       const primaryLang = (language || 'en').toLowerCase();
-      if (!map[primaryLang]) {
-        map[primaryLang] = explanation;
-      }
+      map[primaryLang] = explanation.trim();
     }
+    console.log('[TruthLens] explanations loaded:', {
+      keys: Object.keys(map),
+      hiPreview: map.hi?.slice(0, 40),
+      mrPreview: map.mr?.slice(0, 40),
+      sameHiMr: map.hi && map.mr ? map.hi === map.mr : null,
+    });
     setStoredExplanations(map);
   }, [explanations, explanation, language, claim, verdict]);
 
@@ -119,14 +124,13 @@ export default function VerdictCard({
   ];
 
   const handleLanguageChange = (newLang: string) => {
-    if (newLang === selectedLanguage) return;
-    setSelectedLanguage(newLang);
+    const code = newLang.toLowerCase();
+    if (code === selectedLanguage) return;
+    console.log('[TruthLens] language tab:', code, storedExplanations[code]?.slice(0, 50));
+    setSelectedLanguage(code);
   };
 
-  const displayedExplanation =
-    storedExplanations[selectedLanguage] ??
-    storedExplanations.en ??
-    '';
+  const displayedExplanation = storedExplanations[selectedLanguage] ?? '';
 
   const normalizedVerdict = (verdict || "UNVERIFIABLE").toUpperCase();
 

@@ -26,7 +26,8 @@ export default function AnimatedBackground() {
           value: 70,
           density: {
             enable: true,
-            area: 800,
+            width: 1920,
+            height: 1080,
           },
         },
         color: {
@@ -36,26 +37,20 @@ export default function AnimatedBackground() {
           type: 'circle',
         },
         opacity: {
-          value: { min: 0.3, max: 0.6 },
+          value: { min: 0.45, max: 0.75 },
           animation: {
-            enable: true,
-            speed: 0.8,
-            minimumValue: 0.2,
-            sync: false,
+            enable: false,
           },
         },
         size: {
-          value: { min: 1, max: 2.5 },
+          value: { min: 2, max: 3.5 },
           animation: {
-            enable: true,
-            speed: 1.5,
-            minimumValue: 0.5,
-            sync: false,
+            enable: false,
           },
         },
         shadow: {
           enable: true,
-          blur: 6,
+          blur: 12,
           color: {
             value: '#FFFFFF',
           },
@@ -69,7 +64,7 @@ export default function AnimatedBackground() {
         },
         move: {
           enable: true,
-          speed: 0.6,
+          speed: 0.65,
           direction: 'none',
           random: true,
           straight: false,
@@ -79,14 +74,14 @@ export default function AnimatedBackground() {
         },
       },
       interactivity: {
+        detectsOn: 'window',
         events: {
           onHover: {
             enable: true,
             mode: 'grab',
           },
           onClick: {
-            enable: true,
-            mode: 'push',
+            enable: false,
           },
           resize: {
             enable: true,
@@ -94,13 +89,10 @@ export default function AnimatedBackground() {
         },
         modes: {
           grab: {
-            distance: 180,
+            distance: 160,
             links: {
               opacity: 0.3,
             },
-          },
-          push: {
-            quantity: 2,
           },
         },
       },
@@ -111,7 +103,7 @@ export default function AnimatedBackground() {
 
   const particlesLoaded = async (container?: Container) => {
     if (container) {
-      console.log('[TruthLens Particles] Canvas Loaded (Minimal Style):', {
+      console.log('[TruthLens Particles] Minimal canvas loaded:', {
         count: container.particles.count,
         width: container.canvas.size.width,
         height: container.canvas.size.height,
@@ -121,15 +113,15 @@ export default function AnimatedBackground() {
 
   return (
     <div
-      className="absolute inset-0 z-0 overflow-hidden pointer-events-none"
-      style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' }}
+      className="absolute inset-0 overflow-hidden"
+      style={{ width: '100%', height: '100%' }}
     >
       <ParticlesProvider init={initParticles}>
         <Particles
           id="tsparticles"
           options={options}
           particlesLoaded={particlesLoaded}
-          className="w-full h-full"
+          className="w-full h-full pointer-events-auto"
           style={{ width: '100%', height: '100%' }}
         />
       </ParticlesProvider>
