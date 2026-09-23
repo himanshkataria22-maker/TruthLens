@@ -130,7 +130,7 @@ export default function LoadingSteps({
   );
 
   return (
-    <div className="theme-card p-6 sm:p-8 max-w-2xl mx-auto space-y-6 animate-slide-up shadow-xl border border-white/80">
+    <div className="p-6 sm:p-8 max-w-2xl mx-auto space-y-6 animate-slide-up shadow-xl border border-white/80 bg-transparent">
       {/* Header */}
       <div className="text-center space-y-2.5">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00D9FF]/10 border border-[#00D9FF]/30 text-[#00D9FF] text-xs font-semibold">
@@ -138,12 +138,12 @@ export default function LoadingSteps({
           <span>Multi-Agent Pipeline Active</span>
         </div>
 
-        <h2 className="font-heading text-2xl font-extrabold text-[#0A1128] tracking-tight">
+        <h2 className="font-heading text-2xl font-extrabold text-yellow-300 tracking-tight">
           Verifying Claim...
         </h2>
 
         {claimText && (
-          <div className="bg-slate-100/90 border border-slate-200 rounded-xl p-3 text-xs text-[#0A1128] italic font-medium max-w-lg mx-auto truncate shadow-inner">
+          <div className="bg-gray-600/40 border border-gray-400/50 rounded-xl p-3 text-xs text-gray-200 italic font-medium max-w-lg mx-auto truncate shadow-inner">
             &ldquo;{claimText}&rdquo;
           </div>
         )}
