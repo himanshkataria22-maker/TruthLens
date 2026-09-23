@@ -88,10 +88,10 @@ async def call_llm_json(
             base_url = "https://api.groq.com/openai/v1/chat/completions"
             if not model:
                 model = "llama-3.3-70b-versatile"
-        elif api_key.startswith("AIza"):
+        elif api_key.startswith("AIza") or api_key.startswith("AQ."):
             base_url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
             if not model:
-                model = "gemini-1.5-flash"
+                model = "gemini-2.0-flash"
         else:
             base_url = "https://api.openai.com/v1/chat/completions"
             if not model:

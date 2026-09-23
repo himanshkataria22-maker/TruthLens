@@ -53,7 +53,7 @@ def _check_api_keys_on_startup():
         if has_llm:
             if llm_key.startswith("gsk_"):
                 provider = "Groq"
-            elif llm_key.startswith("AIza"):
+            elif llm_key.startswith("AIza") or llm_key.startswith("AQ."):
                 provider = "Google Gemini"
             else:
                 provider = "OpenAI"
@@ -64,7 +64,22 @@ def _check_api_keys_on_startup():
         print(f"[TruthLens INFO] ✓ LLM API Key configured ({provider} provider)")
     
     if not has_search:
-        print("[TruthLens WARNING] SEARCH_API_KEY not configured — web research will fail (optional)")
+        print("\n" + "="*70)
+        print("[TruthLens WARNING] ⚠️  NO SEARCH API KEY CONFIGURED")
+        print("="*70)
+        print("Web search will use DuckDuckGo fallback (may be rate-limited)")
+        print("\nTo fix this:")
+        print("1. Open: backend/.env")
+        print("2. Add:")
+        print("   - SEARCH_API_KEY=your_serpapi_key (recommended)")
+        print("   OR")
+        print("   - SEARCH_API_KEY=your_serper_key")
+        print("   OR")
+        print("   - SEARCH_API_KEY=your_tavily_key")
+        print("3. Restart the backend server")
+        print("="*70 + "\n")
+    else:
+        print(f"[TruthLens INFO] ✓ Search API Key configured (SerpAPI/Serper/Tavily)")
 
 app = FastAPI(
     title="TruthLens API",
