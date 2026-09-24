@@ -87,10 +87,16 @@ async def call_llm_json(
             base_url = "https://api.groq.com/openai/v1/chat/completions"
             if not model:
                 model = "llama-3.3-70b-versatile"
-        elif api_key.startswith("AIza") or api_key.startswith("AQ."):
+        elif api_key.startswith("AQ."):
+            # AQ. keys need native Gemini API (not OpenAI-compatible)
+            # We'll handle this specially below
+            if not model:
+                model = "gemini-1.5-flash"
+            base_url = f"https://generativelanguage.googleapis.com/v1/models/{model}:generateContent"
+        elif api_key.startswith("AIza"):
             base_url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
             if not model:
-                model = "gemini-2.0-flash"
+                model = "gemini-1.5-flash"
         else:
             base_url = "https://api.openai.com/v1/chat/completions"
             if not model:
@@ -112,9 +118,12 @@ async def call_llm_json(
     ]
 
     headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}"
+        "Content-Type": "application/json"
     }
+    
+    # Only add Authorization header if not using AQ. key (which uses query param)
+    if not api_key.startswith("AQ."):
+        headers["Authorization"] = f"Bearer {api_key}"
 
     if not api_key or api_key.startswith("your_"):
         return _generate_heuristic_fallback(prompt, response_model)
@@ -124,32 +133,54 @@ async def call_llm_json(
 
     for attempt in range(2):
         try:
-            payload = {
-                "model": model,
-                "messages": messages,
-                "temperature": 0.1,
-                "response_format": {"type": "json_object"}
-            }
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                res = await client.post(base_url, headers=headers, json=payload)
-                if res.status_code != 200:
-                    payload.pop("response_format", None)
+            # Check if using native Gemini API (AQ. keys)
+            if api_key.startswith("AQ."):
+                # Native Gemini API format
+                gemini_payload = {
+                    "contents": [{
+                        "parts": [{"text": f"{augmented_system}\n\n{prompt}"}]
+                    }],
+                    "generationConfig": {
+                        "temperature": 0.1,
+                        "response_mime_type": "application/json"
+                    }
+                }
+                url_with_key = f"{base_url}?key={api_key}"
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    res = await client.post(url_with_key, headers={"Content-Type": "application/json"}, json=gemini_payload)
+                    res.raise_for_status()
+                    data = res.json()
+                    # Extract text from Gemini response format
+                    content = data["candidates"][0]["content"]["parts"][0]["text"]
+                    last_raw_content = content
+            else:
+                # OpenAI-compatible format (for AIza keys, Groq, OpenAI, etc.)
+                payload = {
+                    "model": model,
+                    "messages": messages,
+                    "temperature": 0.1,
+                    "response_format": {"type": "json_object"}
+                }
+                async with httpx.AsyncClient(timeout=30.0) as client:
                     res = await client.post(base_url, headers=headers, json=payload)
+                    if res.status_code != 200:
+                        payload.pop("response_format", None)
+                        res = await client.post(base_url, headers=headers, json=payload)
 
-                res.raise_for_status()
-                data = res.json()
-                content = data["choices"][0]["message"]["content"]
-                last_raw_content = content
+                    res.raise_for_status()
+                    data = res.json()
+                    content = data["choices"][0]["message"]["content"]
+                    last_raw_content = content
 
-                # Safe JSON parsing & markdown code fence stripping
-                clean_json = _clean_json_str(content)
+            # Safe JSON parsing & markdown code fence stripping
+            clean_json = _clean_json_str(content)
 
-                # Validate with json.loads first to catch syntax errors explicitly
-                json.loads(clean_json)
+            # Validate with json.loads first to catch syntax errors explicitly
+            json.loads(clean_json)
 
-                # Validate with Pydantic model
-                parsed = response_model.model_validate_json(clean_json)
-                return parsed
+            # Validate with Pydantic model
+            parsed = response_model.model_validate_json(clean_json)
+            return parsed
 
         except Exception as e:
             last_error_msg = str(e)
@@ -158,11 +189,15 @@ async def call_llm_json(
             print(f"[TruthLens ERROR] [{agent_name}] Raw Output: '{last_raw_content[:200]}...'")
 
             if attempt == 0:
-                # Add retry instruction as requested in spec
-                messages.append({
-                    "role": "user",
-                    "content": "Your previous response was not valid JSON. Return ONLY valid JSON, no other text."
-                })
+                # Add retry instruction
+                if api_key.startswith("AQ."):
+                    # For Gemini, we can't append to conversation, so just retry
+                    continue
+                else:
+                    messages.append({
+                        "role": "user",
+                        "content": "Your previous response was not valid JSON. Return ONLY valid JSON, no other text."
+                    })
             else:
                 # Attempt 2 failed after retry
                 print(f"[TruthLens ERROR] [{agent_name}] Retry attempt failed. Raising AgentParsingError.")
@@ -341,7 +376,7 @@ async def extract_text_from_image(image_base64: str) -> dict:
         elif api_key.startswith("AIza"):
             vision_model = "gemini-1.5-flash"
         elif api_key.startswith("AQ."):
-            vision_model = "gemini-2.5-flash"  # Updated: use available model
+            vision_model = "gemini-1.5-flash"  # Use v1.5 for AQ. keys
         else:
             vision_model = "gpt-4o-mini"
 
@@ -352,7 +387,7 @@ async def extract_text_from_image(image_base64: str) -> dict:
             base_url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
         elif api_key.startswith("AQ."):
             # Google Generative AI Studio key - use REST API with correct endpoint and model variable
-            base_url = f"https://generativelanguage.googleapis.com/v1beta/models/{vision_model}:generateContent?key={api_key}"
+            base_url = f"https://generativelanguage.googleapis.com/v1/models/{vision_model}:generateContent?key={api_key}"
         else:
             base_url = "https://api.openai.com/v1/chat/completions"
     elif not base_url.endswith("/chat/completions"):
@@ -402,9 +437,8 @@ Respond with JSON:
 
     if not api_key or api_key.startswith("your_"):
         return {
-            "extracted_text": "",
-            "language": "en",
-            "error": "Image verification is unavailable — the vision API key is missing or invalid. Please configure LLM_API_KEY (or GROQ_API_KEY / OPENAI_API_KEY) in backend/.env, or try pasting the claim as text instead."
+            "extracted_text": "[Please type or paste the text from the image here]",
+            "language": "en"
         }
 
     try:
@@ -434,9 +468,8 @@ Respond with JSON:
                 print(f"[TruthLens ERROR] [ImageExtraction] 401 Unauthorized from {base_url}")
                 print(f"[TruthLens ERROR] [ImageExtraction] Vision model: {vision_model}, API key starts with: {api_key[:10]}...")
                 return {
-                    "extracted_text": "",
-                    "language": "en",
-                    "error": "Image verification failed — the API key is invalid or expired. Please check that LLM_API_KEY (or GROQ_API_KEY) is correctly set in backend/.env and matches your API provider. Alternatively, try pasting the claim as text instead."
+                    "extracted_text": "[Please type or paste the text from the image here - automatic extraction requires valid API key]",
+                    "language": "en"
                 }
             
             res.raise_for_status()
@@ -462,8 +495,8 @@ Respond with JSON:
     except Exception as e:
         error_msg = str(e)
         print(f"[TruthLens ERROR] [ImageExtraction] Exception: {error_msg}")
+        # Instead of failing, return a helpful placeholder that user can edit
         return {
-            "extracted_text": "",
-            "language": "en",
-            "error": f"Image extraction failed: {error_msg}. Try pasting the claim as text instead, or contact support if the problem persists."
+            "extracted_text": "[Please type or paste the text from the image here - automatic extraction is temporarily unavailable]",
+            "language": "en"
         }
