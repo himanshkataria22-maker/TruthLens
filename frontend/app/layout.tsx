@@ -47,13 +47,8 @@ export default function RootLayout({
         {/* Footer */}
         <footer className="border-t border-white/15 bg-[#344468]/90 py-5 text-center text-xs text-slate-200">
           <div className="max-w-4xl mx-auto px-3 sm:px-6 space-y-2">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
-              <div className="font-heading font-semibold text-white tracking-wide text-xs sm:text-sm">
-                TruthLens &bull; Verify Before You Share
-              </div>
-              <div className="font-mono text-[11px] text-[#22B8CF] font-medium bg-white/10 px-3 py-1 rounded-full border border-white/10">
-                Team Winss | Horizon Hackathon
-              </div>
+            <div className="font-heading font-semibold text-white tracking-wide text-xs sm:text-sm">
+              TruthLens &bull; Verify Before You Share
             </div>
             <p className="text-[11px] text-slate-300">
               AI-assisted verification. Always check the sources.
